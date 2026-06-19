@@ -3,49 +3,46 @@ import { z } from "zod";
 export type SettlementStatus = "SUCCESS" | "BLOCKED" | "FAILED";
 
 /**
- * Travel Rule receipt. AgentCheckout generates this JSON from the verified
- * A-Pass identity + payment. When a settlement tx exists, we also attach the
- * OFFICIAL Cleanverse Travel-Rule PDF retrieved via `download_travel_rule`.
+ * AttestationRef — the verifiable proof that the compliance LLM ran inside a
+ * TEE and produced THIS output for THIS input. Persisted on every receipt so
+ * anyone can re-verify after the fact by calling broker.inference.processResponse.
  */
-export const TravelRuleReceiptSchema = z.object({
-  required: z.boolean(),
-  ruleVersion: z.string(),
-  originator: z.object({
-    address: z.string(),
-    name: z.string().optional(),
-    apassPrincipal: z.string().optional(),
-  }),
-  beneficiary: z.object({
-    address: z.string(),
-    name: z.string().optional(),
-  }),
-  asset: z.string(),
-  amount: z.string(),
-  amountUsd: z.string().optional(),
-  generatedAt: z.string(),
-  /** Official Cleanverse Travel-Rule PDF (download_travel_rule), when available */
-  officialReportUrl: z.string().optional(),
-  officialReportFile: z.string().optional(),
+export const AttestationRefSchema = z.object({
+  providerAddress: z.string(),
+  chatId: z.string(),
+  verified: z.boolean(),
+  verifiabilityKind: z.enum(["TeeML", "mock"]),
 });
-export type TravelRuleReceipt = z.infer<typeof TravelRuleReceiptSchema>;
+export type AttestationRef = z.infer<typeof AttestationRefSchema>;
+
+/**
+ * Pointer into 0G Storage where the full decision blob lives. The 32-byte
+ * rootHash is also written to ComplianceGateway on-chain for cheap proof.
+ */
+export const StorageRefSchema = z.object({
+  storageRoot: z.string(),
+  uploadTxHash: z.string().optional(),
+  gatewayTxHash: z.string().optional(),
+});
+export type StorageRef = z.infer<typeof StorageRefSchema>;
 
 export const ReceiptRecordSchema = z.object({
   id: z.string(),
   ts: z.string(),
   resource: z.string(),
   payer: z.string(),
-  apass: z.object({
-    verified: z.boolean(),
-    code: z.number().optional(),
-    tier: z.string().optional(),
-    principal: z.string().optional(),
-    magicLink: z.string().optional(),
-  }),
+  /** TEE attestation of the compliance decision */
+  attestation: AttestationRefSchema,
+  /** LLM verdict + reasoning */
   compliance: z.object({
-    ok: z.boolean(),
+    allowed: z.boolean(),
+    code: z.enum(["ALLOWED", "DENIED", "ESCALATE"]),
+    rationale: z.string(),
+    decisionHash: z.string(),
     reason: z.string().optional(),
   }),
-  travelRule: TravelRuleReceiptSchema.nullable(),
+  /** 0G Storage + ComplianceGateway pointers (null when not yet persisted) */
+  storage: StorageRefSchema.nullable(),
   payment: z.object({
     asset: z.string(),
     amount: z.string(),
@@ -60,7 +57,7 @@ export const ReceiptRecordSchema = z.object({
 export type ReceiptRecord = z.infer<typeof ReceiptRecordSchema>;
 
 export const ComplianceBundleSchema = z.object({
-  bundleVersion: z.literal(1),
+  bundleVersion: z.literal(2),
   merchant: z.object({ address: z.string(), name: z.string() }),
   generatedAt: z.string(),
   network: z.object({ name: z.string(), chainId: z.number(), explorer: z.string() }),
@@ -68,7 +65,7 @@ export const ComplianceBundleSchema = z.object({
     total: z.number(),
     succeeded: z.number(),
     blocked: z.number(),
-    travelRuleCount: z.number(),
+    attestedTeeML: z.number(),
   }),
   receipts: z.array(ReceiptRecordSchema),
 });
@@ -81,7 +78,7 @@ export function buildComplianceBundle(
   generatedAt: string,
 ): ComplianceBundle {
   return {
-    bundleVersion: 1,
+    bundleVersion: 2,
     merchant,
     generatedAt,
     network,
@@ -89,7 +86,7 @@ export function buildComplianceBundle(
       total: receipts.length,
       succeeded: receipts.filter((r) => r.settlement.status === "SUCCESS").length,
       blocked: receipts.filter((r) => r.settlement.status === "BLOCKED").length,
-      travelRuleCount: receipts.filter((r) => r.travelRule !== null).length,
+      attestedTeeML: receipts.filter((r) => r.attestation.verifiabilityKind === "TeeML" && r.attestation.verified).length,
     },
     receipts,
   };

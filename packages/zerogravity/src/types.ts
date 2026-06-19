@@ -60,4 +60,17 @@ export interface DecideResult {
 export interface ZGComputeClient {
   readonly mode: ZGMode;
   decide(input: DecideInput): Promise<DecideResult>;
+  /**
+   * Re-run attestation verification against the broker (or the mock).
+   * Used by the explorer "Verify" button so anyone can re-check honesty
+   * without trusting the merchant's recorded receipt.
+   *
+   * Returns null when the verification cannot be performed (e.g. live mode
+   * without the original content). Returns true/false from processResponse.
+   */
+  verifyAttestation(
+    providerAddress: string,
+    chatId: string,
+    content?: string,
+  ): Promise<boolean | null>;
 }

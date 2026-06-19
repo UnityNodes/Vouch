@@ -6,20 +6,19 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
- * @title MockAToken
- * @notice ERC-20 + EIP-3009 `transferWithAuthorization`, used by AgentCheckout to
- *         demonstrate a GASLESS x402 "exact" settlement on Monad testnet.
+ * @title AgentCheckoutToken (acUSD)
+ * @notice ERC-20 + full EIP-3009 (`transferWithAuthorization`, `authorizationState`,
+ *         `DOMAIN_SEPARATOR`, `version`) so the x402 "exact" gasless flow works
+ *         end-to-end on 0G Galileo. Public `mint` makes it a self-serve faucet
+ *         for the demo. NOT production-grade.
  *
- *         This is a sandbox STAND-IN for a clean A-Token. The real Cleanverse
- *         aUSDC on Monad does NOT implement EIP-3009 (no version()/DOMAIN_SEPARATOR),
- *         so its transfers are plain on-chain ERC-20 moves gated by A-Pass rules.
- *         We deploy this token only so the x402 gasless flow (sign -> facilitator
- *         relays transferWithAuthorization -> real txHash) works end-to-end.
- *
- *         Public `mint` makes it a self-serve testnet faucet. Do not use in prod.
+ *         On Monad the AgentCheckout demo had to fall back to a "direct" signed
+ *         transfer because Cleanverse aUSDC has no EIP-3009 (version()/
+ *         DOMAIN_SEPARATOR revert). On 0G we deploy our own token and restore
+ *         the clean gasless flow — that's the EIP-3009 win we sell to judges.
  */
-contract MockAToken is ERC20, EIP712 {
-    uint8 private immutable _decimals;
+contract AgentCheckoutToken is ERC20, EIP712 {
+    uint8 private constant _DECIMALS = 6;
 
     // keccak256("TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
     bytes32 public constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH =
@@ -31,16 +30,15 @@ contract MockAToken is ERC20, EIP712 {
 
     event AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce);
 
-    constructor(
-        string memory name_,
-        string memory symbol_,
-        uint8 dec_
-    ) ERC20(name_, symbol_) EIP712(name_, "1") {
-        _decimals = dec_;
+    constructor()
+        ERC20("AgentCheckout USD", "acUSD")
+        EIP712("AgentCheckout USD", "1")
+    {
+        _mint(msg.sender, 1_000_000 * 10 ** uint256(_DECIMALS));
     }
 
-    function decimals() public view override returns (uint8) {
-        return _decimals;
+    function decimals() public pure override returns (uint8) {
+        return _DECIMALS;
     }
 
     function version() external pure returns (string memory) {
@@ -55,13 +53,13 @@ contract MockAToken is ERC20, EIP712 {
         return _authorizationStates[authorizer][nonce];
     }
 
-    /// @notice Open testnet faucet mint.
+    /// @notice Open testnet faucet mint. Demo only.
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
 
-    /// @notice EIP-3009 gasless transfer: a relayer (facilitator) broadcasts a
-    ///         transfer the holder authorized off-chain via an EIP-712 signature.
+    /// @notice EIP-3009 gasless transfer. The holder signs off-chain, any relayer
+    ///         (the AgentCheckout facilitator) broadcasts.
     function transferWithAuthorization(
         address from,
         address to,
@@ -71,9 +69,9 @@ contract MockAToken is ERC20, EIP712 {
         bytes32 nonce,
         bytes calldata signature
     ) external {
-        require(block.timestamp > validAfter, "MockAToken: auth not yet valid");
-        require(block.timestamp < validBefore, "MockAToken: auth expired");
-        require(!_authorizationStates[from][nonce], "MockAToken: nonce already used");
+        require(block.timestamp > validAfter, "acUSD: auth not yet valid");
+        require(block.timestamp < validBefore, "acUSD: auth expired");
+        require(!_authorizationStates[from][nonce], "acUSD: nonce already used");
 
         bytes32 structHash = keccak256(
             abi.encode(
@@ -88,7 +86,7 @@ contract MockAToken is ERC20, EIP712 {
         );
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
-        require(signer == from, "MockAToken: invalid signature");
+        require(signer == from, "acUSD: invalid signature");
 
         _authorizationStates[from][nonce] = true;
         emit AuthorizationUsed(from, nonce);

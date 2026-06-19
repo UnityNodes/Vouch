@@ -6,7 +6,8 @@ import * as path from "path";
 // load the monorepo-root .env
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
+const DEPLOYER_PRIVATE_KEY =
+  process.env.DEPLOYER_PRIVATE_KEY ?? process.env.PRIMARY_PRIVATE_KEY;
 const accounts = DEPLOYER_PRIVATE_KEY ? [DEPLOYER_PRIVATE_KEY] : [];
 
 const config: HardhatUserConfig = {
@@ -15,9 +16,9 @@ const config: HardhatUserConfig = {
     settings: { optimizer: { enabled: true, runs: 200 } },
   },
   networks: {
-    monadTestnet: {
-      url: process.env.MONAD_RPC_URL ?? "https://testnet-rpc.monad.xyz",
-      chainId: 10143,
+    galileo: {
+      url: process.env.GALILEO_RPC_URL ?? "https://evmrpc-testnet.0g.ai",
+      chainId: Number(process.env.GALILEO_CHAIN_ID ?? 16602),
       accounts,
     },
     localhost: {

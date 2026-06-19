@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { buildComplianceBundle, MONAD_TESTNET } from "@agentcheckout/shared";
+import { buildComplianceBundle, GALILEO_TESTNET } from "@agentcheckout/shared";
 import { getStore } from "../../../lib/store";
 
 export const runtime = "nodejs";
@@ -12,7 +12,11 @@ export async function GET() {
       address: process.env.MERCHANT_ADDRESS ?? "0x0000000000000000000000000000000000000000",
       name: process.env.MERCHANT_NAME ?? "Acme Data Co",
     },
-    { name: MONAD_TESTNET.slug, chainId: MONAD_TESTNET.chainId, explorer: MONAD_TESTNET.explorerUrl },
+    {
+      name: GALILEO_TESTNET.slug,
+      chainId: GALILEO_TESTNET.chainId,
+      explorer: GALILEO_TESTNET.explorerUrl,
+    },
     receipts,
     new Date().toISOString(),
   );

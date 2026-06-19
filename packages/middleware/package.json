@@ -15,7 +15,7 @@
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
-    "@agentcheckout/cleanverse": "workspace:*",
+    "@agentcheckout/zerogravity": "workspace:*",
     "@agentcheckout/shared": "workspace:*",
     "viem": "^2.21.55"
   },

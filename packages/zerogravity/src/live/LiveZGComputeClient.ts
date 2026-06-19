@@ -106,4 +106,13 @@ export class LiveZGComputeClient implements ZGComputeClient {
       attestation,
     };
   }
+
+  async verifyAttestation(
+    providerAddress: string,
+    chatId: string,
+    content?: string,
+  ): Promise<boolean | null> {
+    const broker = await getBroker();
+    return await broker.inference.processResponse(providerAddress, chatId, content);
+  }
 }

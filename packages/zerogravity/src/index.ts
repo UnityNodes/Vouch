@@ -1,6 +1,8 @@
 import type { ZGComputeClient, ZGMode } from "./types.js";
 
 export * from "./types.js";
+export { MockZGComputeClient } from "./mock/MockZGComputeClient.js";
+export type { MockZGOptions } from "./mock/MockZGComputeClient.js";
 export { ZGStorageReceiptStore } from "./live/storage.js";
 
 export async function makeZGComputeClient(mode: ZGMode): Promise<ZGComputeClient> {

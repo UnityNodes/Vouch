@@ -7,8 +7,9 @@ export const dynamic = "force-dynamic";
 
 /**
  * Drive a real x402 payment against the demo-merchant from the console, so the
- * live feed populates on stage. mode=success uses the verified agent key,
- * mode=blocked uses an agent whose address is on the Cleanverse deny list.
+ * live feed populates on stage. mode=success uses an agent key the mock
+ * MockZGComputeClient policy will allow; mode=blocked uses an agent whose
+ * address is on the policy deny-list (or whose amount blows the cap).
  */
 export async function POST(req: Request) {
   const { mode } = (await req.json().catch(() => ({ mode: "success" }))) as { mode?: string };

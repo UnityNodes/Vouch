@@ -23,9 +23,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgentCheckout · Compliant payments from AI agents",
+  title: "AgentCheckout 0G · TEE-attested compliance gateway",
   description:
-    "A payment gateway for AI agents. Every transaction is checked against a bank-verified Cleanverse A-Pass identity and settled in a clean A-Token on Monad.",
+    "Payment gateway for AI agents. Every transaction is gated by a TEE-attested LLM decision running on 0G Compute, with the full audit trail on 0G Storage. Trust us → verify yourself.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

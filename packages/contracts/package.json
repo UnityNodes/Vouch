@@ -6,7 +6,7 @@
   "scripts": {
     "build": "hardhat compile",
     "compile": "hardhat compile",
-    "deploy:monad": "hardhat run scripts/deploy.ts --network monadTestnet",
+    "deploy:galileo": "hardhat run scripts/deploy.ts --network galileo",
     "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
     "node": "hardhat node",
     "typecheck": "echo \"contracts: validated via hardhat compile + e2e deploy\"",

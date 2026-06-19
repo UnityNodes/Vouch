@@ -3,8 +3,8 @@ import express from "express";
 import request from "supertest";
 import { agentCheckout } from "../src/index";
 import type { AssetConfig } from "../src/index";
-import { MockCleanverseClient } from "@agentcheckout/cleanverse";
-import { encodeApass, encodePayment, type PaymentPayload, type ReceiptRecord } from "@agentcheckout/shared";
+import { MockZGComputeClient } from "@agentcheckout/zerogravity";
+import { encodePayment, type PaymentPayload, type ReceiptRecord } from "@agentcheckout/shared";
 import type { ReceiptStore } from "@agentcheckout/shared/store";
 
 class MemStore implements ReceiptStore {
@@ -19,25 +19,25 @@ class MemStore implements ReceiptStore {
 
 const ASSET: AssetConfig = {
   address: "0x000000000000000000000000000000000000aaaa",
-  name: "Mock",
+  name: "AgentCheckout USD",
   version: "1",
   decimals: 6,
-  symbol: "mUSD",
+  symbol: "acUSD",
 };
 const PAYTO = "0x000000000000000000000000000000000000bbbb" as const;
 const PAYER = "0x000000000000000000000000000000000000cccc";
 
-function buildApp(cleanverse: MockCleanverseClient, store: ReceiptStore) {
+function buildApp(zg: MockZGComputeClient, store: ReceiptStore) {
   const app = express();
   app.use(
     agentCheckout({
       payTo: PAYTO,
       facilitatorUrl: "http://facilitator.test",
-      network: "monad",
-      chainId: 10143,
+      network: "0g-galileo",
+      chainId: 16602,
       asset: ASSET,
       routes: { "GET /premium": { price: "$0.01" } },
-      cleanverse,
+      zg,
       store,
     }),
   );
@@ -49,7 +49,7 @@ function dummyPayment(): PaymentPayload {
   return {
     x402Version: 1,
     scheme: "exact",
-    network: "monad",
+    network: "0g-galileo",
     payload: {
       signature: `0x${"11".repeat(65)}`,
       authorization: {
@@ -64,35 +64,37 @@ function dummyPayment(): PaymentPayload {
   };
 }
 
-const withHeaders = (r: request.Test) =>
-  r
-    .set("X-PAYMENT", encodePayment(dummyPayment()))
-    .set("X-APASS", encodeApass({ version: 1, chain: "monad", address: PAYER }));
+const withPayment = (r: request.Test) => r.set("X-PAYMENT", encodePayment(dummyPayment()));
 
 describe("agentCheckout pipeline", () => {
   afterEach(() => vi.unstubAllGlobals());
 
   it("returns 402 with requirements when no payment is presented", async () => {
-    const app = buildApp(new MockCleanverseClient(), new MemStore());
+    const app = buildApp(new MockZGComputeClient(), new MemStore());
     const res = await request(app).get("/premium");
     expect(res.status).toBe(402);
     expect(res.body.accepts[0].asset).toBe(ASSET.address);
-    expect(res.body.accepts[0].chainId).toBe(10143);
+    expect(res.body.accepts[0].chainId).toBe(16602);
   });
 
-  it("blocks at the A-Pass gate BEFORE calling the facilitator", async () => {
+  it("blocks at the TEE-attested compliance gate BEFORE calling the facilitator", async () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal("fetch", fetchSpy);
     const store = new MemStore();
-    const app = buildApp(new MockCleanverseClient({ denyList: [PAYER] }), store);
+    const app = buildApp(new MockZGComputeClient({ denyList: [PAYER] }), store);
 
-    const res = await withHeaders(request(app).get("/premium"));
+    const res = await withPayment(request(app).get("/premium"));
 
-    expect(res.status).toBe(402);
-    expect(res.body.error).toBe("apass_required");
-    expect(res.body.magicLink).toBeTruthy();
-    expect(fetchSpy).not.toHaveBeenCalled(); // identity gate runs before settlement
-    expect(store.records[0]?.settlement.status).toBe("BLOCKED");
+    expect(res.status).toBe(403);
+    expect(res.body.error).toBe("compliance_denied");
+    expect(res.body.rationale).toMatch(/deny-list/i);
+    expect(res.body.attestation.verifiabilityKind).toBe("mock");
+    expect(res.body.attestation.verified).toBe(true);
+    expect(fetchSpy).not.toHaveBeenCalled(); // compliance gate runs before settlement
+    const stored = store.records[0];
+    expect(stored?.settlement.status).toBe("BLOCKED");
+    expect(stored?.compliance.code).toBe("DENIED");
+    expect(stored?.compliance.decisionHash).toMatch(/^0x[0-9a-f]+$/);
   });
 
   it("verifies, settles, and returns the resource on the happy path", async () => {
@@ -105,7 +107,12 @@ describe("agentCheckout pipeline", () => {
         }
         if (u.endsWith("/settle")) {
           return new Response(
-            JSON.stringify({ success: true, transaction: `0x${"ab".repeat(32)}`, network: "monad", payer: PAYER }),
+            JSON.stringify({
+              success: true,
+              transaction: `0x${"ab".repeat(32)}`,
+              network: "0g-galileo",
+              payer: PAYER,
+            }),
             { status: 200 },
           );
         }
@@ -113,15 +120,17 @@ describe("agentCheckout pipeline", () => {
       }),
     );
     const store = new MemStore();
-    const app = buildApp(new MockCleanverseClient(), store);
+    const app = buildApp(new MockZGComputeClient(), store);
 
-    const res = await withHeaders(request(app).get("/premium"));
+    const res = await withPayment(request(app).get("/premium"));
 
     expect(res.status).toBe(200);
     expect(res.body.ok).toBe(true);
     expect(res.headers["x-payment-response"]).toBeTruthy();
-    expect(store.records[0]?.settlement.status).toBe("SUCCESS");
-    expect(store.records[0]?.settlement.txHash).toContain("0xabab");
-    expect(store.records[0]?.travelRule).not.toBeNull();
+    const stored = store.records[0];
+    expect(stored?.settlement.status).toBe("SUCCESS");
+    expect(stored?.settlement.txHash).toContain("0xabab");
+    expect(stored?.attestation.verified).toBe(true);
+    expect(stored?.compliance.code).toBe("ALLOWED");
   });
 });
