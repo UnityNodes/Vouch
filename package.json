@@ -1,0 +1,42 @@
+{
+  "name": "agentcheckout-0g",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AgentCheckout on 0G — TEE-attested compliance gateway for AI-agent payments. Decisions made by an LLM in a 0G Compute TEE, audit trail on 0G Storage, settlement on 0G Chain (Galileo).",
+  "packageManager": "pnpm@10.14.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "type": "module",
+  "scripts": {
+    "build": "turbo run build",
+    "dev": "turbo run dev",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean",
+    "contracts:deploy": "pnpm --filter @agentcheckout/contracts run deploy:galileo",
+    "e2e": "tsx scripts/e2e.ts",
+    "e2e:live": "tsx scripts/e2e-live.ts",
+    "fund:balances": "tsx scripts/fund-bootstrap.ts"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["esbuild", "keccak", "secp256k1"]
+  },
+  "devDependencies": {
+    "@agentcheckout/shared": "workspace:*",
+    "@agentcheckout/zerogravity": "workspace:*",
+    "@agentcheckout/middleware": "workspace:*",
+    "@agentcheckout/facilitator": "workspace:*",
+    "@agentcheckout/mcp": "workspace:*",
+    "@types/node": "^22.10.2",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.4",
+    "express": "^4.21.2",
+    "tsx": "^4.19.2",
+    "turbo": "^2.3.3",
+    "typescript": "^5.7.2",
+    "viem": "^2.21.55",
+    "vitest": "^2.1.8"
+  }
+}
