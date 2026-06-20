@@ -1,7 +1,7 @@
 /**
  * Singleton broker instance against 0G Galileo testnet, plus helpers for the
  * one-time ledger init, provider acknowledgement, and provider sub-account
- * funding. Same wallet is reused across calls — costs are real OG, so we do
+ * funding. Same wallet is reused across calls - costs are real OG, so we do
  * NOT re-pay on every decide().
  */
 import { ethers } from "ethers";
@@ -47,7 +47,7 @@ export async function getBroker(): Promise<ZGComputeNetworkBroker> {
  * Idempotent: create a ledger if none exists. Default 3 OG matches the v0.6.x
  * contract minimum documented in the official 0g-compute-ts-starter-kit
  * README: "Minimum 3 OG required (contract requirement)". Override only via
- * ZG_LEDGER_INITIAL_OG if a future SDK version relaxes this — anything < 3 OG
+ * ZG_LEDGER_INITIAL_OG if a future SDK version relaxes this - anything < 3 OG
  * will revert against the current InferenceServing contract.
  */
 export async function ensureLedger(): Promise<void> {
@@ -57,7 +57,7 @@ export async function ensureLedger(): Promise<void> {
     // already initialised
   } catch (_err) {
     const ledgerOg = Number(process.env.ZG_LEDGER_INITIAL_OG ?? "3");
-    console.log(`[zg-broker] addLedger(${ledgerOg}) — first init, costs ${ledgerOg} OG`);
+    console.log(`[zg-broker] addLedger(${ledgerOg}) - first init, costs ${ledgerOg} OG`);
     await broker.ledger.addLedger(ledgerOg);
   }
 }
@@ -72,7 +72,7 @@ export async function pickTeeProvider(): Promise<string> {
   );
   if (!tee) {
     throw new Error(
-      "No TeeML-verifiable provider available on 0G Galileo. Try again in a few minutes — testnet provider set is dynamic.",
+      "No TeeML-verifiable provider available on 0G Galileo. Try again in a few minutes - testnet provider set is dynamic.",
     );
   }
   console.log(`[zg-broker] picked TeeML provider: ${tee.provider}`);
@@ -83,7 +83,7 @@ export async function pickTeeProvider(): Promise<string> {
 export async function ensureProviderFunded(providerAddress: string): Promise<void> {
   const broker = await getBroker();
 
-  // 1. acknowledge signer (idempotent — sdk checks contract state internally)
+  // 1. acknowledge signer (idempotent - sdk checks contract state internally)
   try {
     const acked = await broker.inference.acknowledged(providerAddress);
     if (!acked) {
@@ -91,7 +91,7 @@ export async function ensureProviderFunded(providerAddress: string): Promise<voi
       await broker.inference.acknowledgeProviderSigner(providerAddress);
     }
   } catch (e) {
-    // older SDKs may not have `acknowledged` — fall back to attempting acknowledge
+    // older SDKs may not have `acknowledged` - fall back to attempting acknowledge
     console.log(`[zg-broker] acknowledge fallback: ${(e as Error).message}`);
     try {
       await broker.inference.acknowledgeProviderSigner(providerAddress);
@@ -100,7 +100,7 @@ export async function ensureProviderFunded(providerAddress: string): Promise<voi
     }
   }
 
-  // 2. transfer to provider sub-account (idempotent — top-up if needed).
+  // 2. transfer to provider sub-account (idempotent - top-up if needed).
   // Default 1 OG matches the starter-kit canonical pattern.
   const providerFundOg = process.env.ZG_PROVIDER_FUND_OG ?? "1.0";
   const providerFundWei = ethers.parseEther(providerFundOg);
@@ -111,7 +111,7 @@ export async function ensureProviderFunded(providerAddress: string): Promise<voi
     const currentBalance = row?.[1] ?? 0n;
     if (currentBalance < minRequiredWei) {
       console.log(
-        `[zg-broker] transferFund(${providerAddress.slice(0, 10)}…, 'inference', ${providerFundOg} OG) — current ${ethers.formatEther(currentBalance)}`,
+        `[zg-broker] transferFund(${providerAddress.slice(0, 10)}…, 'inference', ${providerFundOg} OG) - current ${ethers.formatEther(currentBalance)}`,
       );
       await broker.ledger.transferFund(providerAddress, "inference", providerFundWei);
     }

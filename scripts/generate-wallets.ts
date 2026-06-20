@@ -22,12 +22,14 @@ const wallets = Array.from({ length: 5 }, () => {
 });
 
 fs.writeFileSync(OUT, JSON.stringify(wallets, null, 2));
-console.log(`Wrote ${wallets.length} wallets → ${OUT}`);
-console.log("\nAddresses (request faucet for each at https://faucet.0g.ai):\n");
+console.log(`Wrote ${wallets.length} fresh wallets to ${OUT}.`);
+console.log("\nAddresses to drip - paste each into https://faucet.0g.ai:\n");
 for (const [i, w] of wallets.entries()) {
   console.log(`  ${i + 1}. ${w.address}`);
 }
-console.log("\nNext steps:");
-console.log("  1. Open https://faucet.0g.ai , request 0.1 OG per address (max once per 24h each).");
-console.log("  2. Post in 0G Discord/Telegram for ~5 OG topup on address #1 (see scripts/funding-log.md).");
-console.log("  3. Run `pnpm fund:balances` daily to track accumulation.");
+console.log("\nWhat to do next:");
+console.log("  1. Open https://faucet.0g.ai and request testnet OG for each address.");
+console.log("     (The faucet rate-limits per wallet per day, so spread the drips out.)");
+console.log("  2. For the bigger top-up, post in 0G Discord - the template is in");
+console.log("     scripts/funding-log.md. Ask to land it on address #1.");
+console.log("  3. Run `pnpm fund:balances` daily to see how close you are to the 5 OG target.");

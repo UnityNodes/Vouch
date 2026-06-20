@@ -69,7 +69,7 @@ app.get("/premium-data", (_req, res) => {
     pair: "OG/USD",
     confidence: 0.91,
     generatedAt: new Date().toISOString(),
-    note: "Unlocked via Vouch: TEE-attested decision + settled vUSD on 0G Galileo.",
+    note: "You got here because Vouch reviewed your payment inside a 0G Compute TEE, said yes, and settled in vUSD on 0G Chain - all in one round-trip.",
   });
 });
 

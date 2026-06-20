@@ -13,7 +13,7 @@ import type { Indexer as IndexerType, MemData as MemDataType } from "@0gfoundati
 import type { ReceiptStore } from "@agentcheckout/shared/store";
 import type { ReceiptRecord } from "@agentcheckout/shared";
 
-// Same Rollup-chunk re-export issue as the compute SDK — load via CJS to
+// Same Rollup-chunk re-export issue as the compute SDK - load via CJS to
 // dodge tsx's ESM resolution bug.
 const requireSdk = createRequire(import.meta.url);
 const { Indexer, MemData } = requireSdk("@0gfoundation/0g-storage-ts-sdk") as {
@@ -35,7 +35,7 @@ export class ZGStorageReceiptStore implements ReceiptStore {
     const pk = process.env.PRIMARY_PRIVATE_KEY;
     if (!pk || pk === "0x" || pk.length < 20) {
       throw new Error(
-        "PRIMARY_PRIVATE_KEY missing — required for 0G Storage uploads. Falling back to JsonReceiptStore is recommended for local dev.",
+        "PRIMARY_PRIVATE_KEY missing - required for 0G Storage uploads. Falling back to JsonReceiptStore is recommended for local dev.",
       );
     }
     const provider = new ethers.JsonRpcProvider(rpcUrl);
@@ -60,7 +60,7 @@ export class ZGStorageReceiptStore implements ReceiptStore {
 
     const stored: ReceiptRecord = {
       ...r,
-      // Stash the root hash on the receipt — the shared schema has no slot, so
+      // Stash the root hash on the receipt - the shared schema has no slot, so
       // we tuck it into the resource URL fragment for the live feed UI.
       // Phase 4 will extend ReceiptRecord with first-class storageRoot/txHash.
       resource: `${r.resource}#zgs:${rootHash}`,

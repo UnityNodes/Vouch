@@ -61,14 +61,17 @@ export default function Page() {
             margin: 0,
           }}
         >
-          Vouch <span style={{ color: "#888", fontSize: "1.4rem", fontWeight: 400 }}>· Compliance Explorer</span>
+          Vouch{" "}
+          <span style={{ color: "#888", fontSize: "1.4rem", fontWeight: 400 }}>
+            - payments that vouch for themselves
+          </span>
         </h1>
-        <p style={{ color: "#aaa", marginTop: 6, maxWidth: 720 }}>
-          Live TEE-attested payment decisions on 0G. Each row was decided by
-          an LLM running inside a 0G Compute TEE; the decision + attestation
-          proof is stored on 0G Storage with an on-chain pointer. Click{" "}
-          <b>Verify</b> to re-check the attestation against the broker —
-          &ldquo;trust us&rdquo; becomes &ldquo;verify yourself.&rdquo;
+        <p style={{ color: "#aaa", marginTop: 10, maxWidth: 760, lineHeight: 1.6 }}>
+          Every payment below was reviewed by an AI judge running inside a sealed
+          enclave on 0G Compute. The reasoning, the verdict, and a cryptographic
+          proof are stored on 0G Storage - and you can re-check any of them
+          yourself in one click. Don&rsquo;t take our word for it. Check the
+          receipts.
         </p>
       </header>
 
@@ -78,14 +81,14 @@ export default function Page() {
           disabled={demoBusy !== null}
           style={demoBtnStyle("#0a8")}
         >
-          {demoBusy === "success" ? "running…" : "Trigger paid flow"}
+          {demoBusy === "success" ? "Sending…" : "Try a legitimate payment"}
         </button>
         <button
           onClick={() => triggerDemo("blocked")}
           disabled={demoBusy !== null}
           style={demoBtnStyle("#c33")}
         >
-          {demoBusy === "blocked" ? "running…" : "Trigger blocked flow"}
+          {demoBusy === "blocked" ? "Sending…" : "Try a suspicious payment"}
         </button>
         <a
           href="https://github.com/0gfoundation/0g-compute-ts-starter-kit"
@@ -93,7 +96,7 @@ export default function Page() {
           rel="noreferrer"
           style={{ ...demoBtnStyle("#333"), textDecoration: "none", display: "inline-block" }}
         >
-          0G Compute SDK docs ↗
+          0G Compute SDK ↗
         </a>
       </section>
 
@@ -126,21 +129,21 @@ export default function Page() {
       >
         <thead style={{ background: "#1a1a1d" }}>
           <tr>
-            <Th>time</Th>
-            <Th>status</Th>
-            <Th>payer → merchant</Th>
-            <Th>amount</Th>
-            <Th>code</Th>
-            <Th>rationale</Th>
-            <Th>tx</Th>
-            <Th>verify</Th>
+            <Th>When</Th>
+            <Th>Outcome</Th>
+            <Th>Payer → Merchant</Th>
+            <Th>Amount</Th>
+            <Th>Verdict</Th>
+            <Th>Why</Th>
+            <Th>On-chain receipt</Th>
+            <Th>Re-check</Th>
           </tr>
         </thead>
         <tbody>
           {receipts.length === 0 && (
             <tr>
-              <td colSpan={8} style={{ padding: 24, textAlign: "center", color: "#666" }}>
-                No decisions yet. Trigger a flow above to populate the feed.
+              <td colSpan={8} style={{ padding: 28, textAlign: "center", color: "#888" }}>
+                Nothing here yet. Try a payment above to see how Vouch decides.
               </td>
             </tr>
           )}
@@ -159,7 +162,11 @@ export default function Page() {
                     fontWeight: 600,
                   }}
                 >
-                  {r.settlement.status}
+                  {r.settlement.status === "SUCCESS"
+                    ? "Paid"
+                    : r.settlement.status === "BLOCKED"
+                      ? "Blocked"
+                      : "Failed"}
                 </span>
               </Td>
               <Td mono>
@@ -168,12 +175,16 @@ export default function Page() {
               <Td mono>{r.payment.amount}</Td>
               <Td>
                 <span style={{ color: r.compliance.allowed ? "#0a8" : "#c33" }}>
-                  {r.compliance.code}
+                  {r.compliance.code === "ALLOWED"
+                    ? "Allowed"
+                    : r.compliance.code === "DENIED"
+                      ? "Denied"
+                      : "Escalated"}
                 </span>
               </Td>
               <Td>
                 <span style={{ fontSize: 11, color: "#aaa" }}>
-                  {r.compliance.rationale.slice(0, 100)}
+                  {r.compliance.rationale.slice(0, 110)}
                 </span>
               </Td>
               <Td mono>
@@ -191,7 +202,7 @@ export default function Page() {
                     r.settlement.txHash.slice(0, 10) + "…"
                   )
                 ) : (
-                  <span style={{ color: "#555" }}>—</span>
+                  <span style={{ color: "#555" }}>-</span>
                 )}
               </Td>
               <Td>
@@ -202,11 +213,12 @@ export default function Page() {
         </tbody>
       </table>
 
-      <footer style={{ marginTop: 24, color: "#666", fontSize: 12 }}>
-        Polling <code>/api/decisions</code> every 3s · Verify hits{" "}
-        <code>/api/reverify</code> which calls{" "}
-        <code>broker.inference.processResponse(...)</code> in live mode (mock-mode
-        returns deterministic true).
+      <footer style={{ marginTop: 28, color: "#888", fontSize: 12, lineHeight: 1.6 }}>
+        The feed updates live as new payments come through. Re-checking a row
+        runs the original attestation back through 0G Compute - if the
+        provider tampered with the verdict, the check fails. In mock mode the
+        check returns instantly; switch to live mode once your wallet has 0G
+        Compute credits.
       </footer>
     </main>
   );
@@ -217,7 +229,7 @@ function Th({ children }: { children: React.ReactNode }) {
     <th
       style={{
         textAlign: "left",
-        padding: "8px 12px",
+        padding: "10px 12px",
         fontWeight: 500,
         color: "#aaa",
         fontSize: 11,
@@ -234,7 +246,7 @@ function Td({ children, mono = false }: { children: React.ReactNode; mono?: bool
   return (
     <td
       style={{
-        padding: "8px 12px",
+        padding: "10px 12px",
         verticalAlign: "top",
         fontFamily: mono ? "var(--font-mono), monospace" : undefined,
       }}

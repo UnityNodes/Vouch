@@ -33,10 +33,10 @@ export function VerifyButton({ attestation }: VerifyButtonProps) {
       const j = await r.json();
       if (j.verified) {
         setState("ok");
-        setDetail(`mode=${j.mode}`);
+        setDetail(j.mode === "live" ? "Verified via 0G Compute" : "Mock attestation");
       } else {
         setState("fail");
-        setDetail(j.error ?? `raw=${JSON.stringify(j.raw)}`);
+        setDetail(j.error ?? "Attestation did not match");
       }
     } catch (e) {
       setState("fail");
@@ -46,19 +46,24 @@ export function VerifyButton({ attestation }: VerifyButtonProps) {
 
   const label =
     state === "idle"
-      ? "Verify"
+      ? "Re-check"
       : state === "loading"
-        ? "…"
+        ? "Checking…"
         : state === "ok"
-          ? "✅ Verified"
-          : "❌ Failed";
+          ? "✅ Honest"
+          : "❌ Tampered";
+
+  const tooltip =
+    attestation.verifiabilityKind === "TeeML"
+      ? "Click to ask 0G Compute to re-run the original attestation check."
+      : "Mock attestation - in live mode this would hit a real TEE provider.";
 
   return (
     <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch", gap: 2 }}>
       <button
         onClick={go}
         disabled={state === "loading"}
-        title={`${attestation.verifiabilityKind} attestation${detail ? " · " + detail : ""}`}
+        title={tooltip}
         style={{
           padding: "4px 10px",
           fontSize: 12,

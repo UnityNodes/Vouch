@@ -52,18 +52,18 @@ export class MockZGComputeClient implements ZGComputeClient {
     let rationale: string;
     if (this.denyList.has(payerLc) || this.denyList.has(merchantLc)) {
       code = "DENIED";
-      rationale = `MOCK DENY: payer/merchant on policy deny-list.`;
+      rationale = `Blocked - payer or merchant is on the policy deny-list.`;
     } else if (amount > this.maxAmount) {
       code = "DENIED";
-      rationale = `MOCK DENY: amount ${amount} > per-tx cap ${this.maxAmount}.`;
+      rationale = `Blocked - amount ${amount} is over the per-transaction limit of ${this.maxAmount}.`;
     } else if (SUSPICIOUS_PURPOSE.test(purpose)) {
       code = "DENIED";
-      rationale = `MOCK DENY: purpose matches suspicious pattern "${purpose.slice(0, 60)}".`;
+      rationale = `Blocked - the stated purpose contains a forbidden keyword: "${purpose.slice(0, 60)}".`;
     } else if (amount > PURPOSE_REQUIRED_OVER && !purpose) {
       code = "DENIED";
-      rationale = `MOCK DENY: amount ${amount} requires non-empty purpose.`;
+      rationale = `Blocked - payments over ${PURPOSE_REQUIRED_OVER} must declare a purpose.`;
     } else {
-      rationale = `MOCK ALLOW: payer ${input.payer.slice(0, 10)} → merchant ${input.merchant.slice(0, 10)}, amount ${amount} within policy.`;
+      rationale = `Allowed - payer ${input.payer.slice(0, 10)}… is sending ${amount} to ${input.merchant.slice(0, 10)}…, all checks pass.`;
     }
 
     const decisionHash = keccak256(toUtf8Bytes(JSON.stringify(input) + "|" + rationale));

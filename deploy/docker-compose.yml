@@ -1,8 +1,8 @@
-# Vouch — production stack for Ubuntu.
+# Vouch - production stack for Ubuntu.
 #
 # Two services:
-#   merchant-console — Next.js app with all /api routes (mock zg + in-memory feed)
-#   nginx            — reverse proxy + HTTPS terminator (Let's Encrypt via certbot)
+#   merchant-console - Next.js app with all /api routes (mock zg + in-memory feed)
+#   nginx            - reverse proxy + HTTPS terminator (Let's Encrypt via certbot)
 #
 # Start:  docker compose -f deploy/docker-compose.yml up -d --build
 # Logs:   docker compose -f deploy/docker-compose.yml logs -f

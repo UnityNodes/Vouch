@@ -1,4 +1,4 @@
-# 0G Galileo testnet funding — log
+# 0G Galileo testnet funding - log
 
 Chain ID **16602**, RPC `https://evmrpc-testnet.0g.ai`, explorer `https://chainscan-galileo.0g.ai`.
 
@@ -8,7 +8,7 @@ The `InferenceServing` contract (per the official [`0g-compute-ts-starter-kit` R
 
 | Step | Cost |
 |---|---|
-| `addLedger(3)` — broker ledger init | 3.0 OG |
+| `addLedger(3)` - broker ledger init | 3.0 OG |
 | `transferFund(provider, 'inference', 1)` | 1.0 OG |
 | Gas for both txs + ack + smoke | ~0.01 OG |
 | Deploy `AgentCheckoutToken` + `ComplianceGateway` | ~0.05 OG |
@@ -26,7 +26,7 @@ The `InferenceServing` contract (per the official [`0g-compute-ts-starter-kit` R
 | 3 | [0G Discord #faucet](https://discord.com/invite/0glabs) | **on request** | the docs explicitly direct here for >0.1 OG/day | Discord |
 | 4 | [faucet.trade](https://faucet.trade/0g-galileo-testnet-0g-faucet) | 0.005-0.02 OG | per day, Twitter follow required | not worth the work |
 
-> Faucets across 5 wallets give ~3 OG/day max. To hit the 5-OG threshold cleanly **you will need Discord**. Don't treat it as a fallback — it's the supported channel for amounts > 0.1 OG/day.
+> Faucets across 5 wallets give ~3 OG/day max. To hit the 5-OG threshold cleanly **you will need Discord**. Don't treat it as a fallback - it's the supported channel for amounts > 0.1 OG/day.
 
 ## Wallets (5 EOAs from `scripts/generate-wallets.ts`)
 
@@ -38,7 +38,7 @@ The `InferenceServing` contract (per the official [`0g-compute-ts-starter-kit` R
 | 4 | 0x3F9eCe28BFf7b9043f08967CDbf71de86541b3a6 | `scripts/wallets.json` |
 | 5 | 0x9d4B7a19342e22769f2FaBED939dD9334d6cb25c | `scripts/wallets.json` |
 
-After collecting, consolidate onto wallet #1 — it becomes `PRIMARY_PRIVATE_KEY` in `.env`.
+After collecting, consolidate onto wallet #1 - it becomes `PRIMARY_PRIVATE_KEY` in `.env`.
 
 ## Daily drip log
 
@@ -47,11 +47,11 @@ After collecting, consolidate onto wallet #1 — it becomes `PRIMARY_PRIVATE_KEY
 | YYYY-MM-DD | faucet.0g.ai | ✅ 0.5 | ✅ 0.5 | ✅ 0.5 | ✅ 0.5 | ✅ 0.5 | 2.5 OG |
 | YYYY-MM-DD | Google Cloud | ✅ 0.1 | ✅ 0.1 | ✅ 0.1 | ✅ 0.1 | ✅ 0.1 | +0.5 OG |
 
-## Discord escalation template (paste this — verbatim)
+## Discord escalation template (paste this - verbatim)
 
 Post in `#hackathon` / `#zero-cup` / `#faucet` on [discord.com/invite/0glabs](https://discord.com/invite/0glabs):
 
-> Hi 👋 — Zero Cup participant building **AgentCheckout 0G** — a TEE-attested compliance gateway for AI-agent payments. The product runs the compliance LLM on a TeeML provider via `@0gfoundation/0g-compute-ts-sdk` and re-verifies the attestation client-side. To exercise the live path I need `addLedger(3)` + `transferFund(1)` + buffer = **~5 OG**. Faucets across 5 wallets give ~3 OG/day, so I'm short ~2 OG. Could you top up `0xEF6B3bfE14Fb5210d481F80a4Cd0434cA9c12257`? Repo will be public at submission. Thank you! 🙏
+> Hi 👋 - I'm a Zero Cup participant building **Vouch**, a payment layer for AI agents where every transaction is reviewed by a TEE-attested judge on 0G Compute. To run the live flow I need to call `addLedger(3)` and `transferFund(1)` plus a small gas buffer - roughly **5 OG** total. Faucets across 5 wallets get me to ~3 OG/day, so I'm about 2 OG short. Could you top up `0xEF6B3bfE14Fb5210d481F80a4Cd0434cA9c12257`? The repo will be public at submission. Thank you! 🙏
 
 | Date | Channel | Outcome |
 |---|---|---|

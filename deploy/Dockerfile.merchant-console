@@ -2,9 +2,9 @@
 #
 # Production image for the Vouch merchant-console (Next.js + API routes).
 # Multi-stage:
-#   1. deps     — install workspace deps with pnpm
-#   2. builder  — build the Next.js standalone bundle
-#   3. runner   — minimal alpine image with just node + the bundle
+#   1. deps     - install workspace deps with pnpm
+#   2. builder  - build the Next.js standalone bundle
+#   3. runner   - minimal alpine image with just node + the bundle
 #
 # Build context = monorepo root (NOT apps/merchant-console). Run from root:
 #   docker build -f deploy/Dockerfile.merchant-console -t vouch-console:latest .

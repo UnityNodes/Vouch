@@ -58,7 +58,7 @@ if (blockedSuspicious.allowed) {
   process.exit(1);
 }
 
-console.log("mock smoke OK — 4/4 cases pass");
+console.log("mock smoke OK - 4/4 cases pass");
 console.log("sample allowed:", allowed.rationale);
 console.log("sample denied (amount):", blockedAmount.rationale);
 console.log("decisionHash sample:", allowed.decisionHash);

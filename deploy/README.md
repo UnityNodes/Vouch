@@ -1,4 +1,4 @@
-# Vouch — Ubuntu deploy
+# Vouch - Ubuntu deploy
 
 Production-mode deploy of the Vouch merchant-console (mock TEE attestations, in-memory receipt feed). Single Next.js container behind nginx with Let's Encrypt HTTPS.
 
@@ -67,7 +67,7 @@ docker compose -f deploy/docker-compose.yml logs -f merchant-console
 curl -sI https://vouch.example.com    # expect: HTTP/2 200
 ```
 
-Open `https://vouch.example.com` — explorer should load.
+Open `https://vouch.example.com` - explorer should load.
 
 ---
 
@@ -95,7 +95,7 @@ git pull
 docker compose -f deploy/docker-compose.yml --env-file .env up -d --build
 ```
 
-`up -d --build` rebuilds the merchant-console image and rolls it without downtime (Next.js standalone server is stateless — in-memory receipts reset, which is acceptable in mock mode).
+`up -d --build` rebuilds the merchant-console image and rolls it without downtime (Next.js standalone server is stateless - in-memory receipts reset, which is acceptable in mock mode).
 
 ---
 
@@ -117,7 +117,7 @@ docker compose -f deploy/docker-compose.yml --env-file .env up -d --build
 
 The container reads these env vars at startup; no other config changes needed. Same nginx, same domain, real TEE attestations now flowing.
 
-> **Note:** in live mode the in-memory receipt store still resets on container restart. For a proper persistent audit trail point a SQLite or KV adapter at `lib/zg.ts`'s `MemoryStore` — out of scope for the group-stage demo.
+> **Note:** in live mode the in-memory receipt store still resets on container restart. For a proper persistent audit trail point a SQLite or KV adapter at `lib/zg.ts`'s `MemoryStore` - out of scope for the group-stage demo.
 
 ---
 
@@ -125,8 +125,8 @@ The container reads these env vars at startup; no other config changes needed. S
 
 | Symptom | Fix |
 |---|---|
-| `nginx: [emerg] cannot load certificate` | Cert not issued yet — re-run step 2 |
+| `nginx: [emerg] cannot load certificate` | Cert not issued yet - re-run step 2 |
 | `bind: address already in use :80` | Stop host nginx: `sudo systemctl stop nginx` |
-| `merchant-console exited 1` on startup | Check `docker compose logs merchant-console` — usually missing workspace dep, rerun `--build` |
-| Explorer loads but Trigger paid/blocked do nothing | Check browser network tab — `/api/demo/run` should 200. If 502, container died |
+| `merchant-console exited 1` on startup | Check `docker compose logs merchant-console` - usually missing workspace dep, rerun `--build` |
+| Explorer loads but Trigger paid/blocked do nothing | Check browser network tab - `/api/demo/run` should 200. If 502, container died |
 | 502 Bad Gateway from nginx | merchant-console container not running yet; wait ~10s after `up -d` |

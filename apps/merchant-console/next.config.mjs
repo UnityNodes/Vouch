@@ -20,7 +20,7 @@ const nextConfig = {
     if (isServer) {
       // 0G SDKs use Node built-ins (node:module createRequire, fs, crypto).
       // Leave them as external require()s so webpack doesn't try to bundle them.
-      // Safe — these are only loaded in live mode, never in the hosted mock demo.
+      // Safe - these are only loaded in live mode, never in the hosted mock demo.
       const externals = Array.isArray(config.externals) ? config.externals : [config.externals].filter(Boolean);
       externals.push({
         "@0gfoundation/0g-compute-ts-sdk": "commonjs @0gfoundation/0g-compute-ts-sdk",

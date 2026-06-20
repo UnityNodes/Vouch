@@ -14,7 +14,7 @@ import {
 import { buildSystemPrompt, buildUserPrompt, parseLLMVerdict } from "./policy";
 
 /**
- * Live ZGComputeClient — runs the compliance verdict on a TeeML-verifiable
+ * Live ZGComputeClient - runs the compliance verdict on a TeeML-verifiable
  * provider via the 0G Compute broker, then verifies the attestation with
  * `broker.inference.processResponse()`. The `verified` boolean it returns is
  * THE load-bearing claim of the whole product.

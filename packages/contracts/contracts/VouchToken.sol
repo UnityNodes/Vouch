@@ -15,7 +15,7 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  *         Why our own token: on Monad the AgentCheckout demo had to fall back
  *         to "direct" signed transfers because the bank-issued token there
  *         lacks EIP-3009 (version()/DOMAIN_SEPARATOR revert). On 0G we deploy
- *         our own and restore the clean gasless flow — that's the EIP-3009
+ *         our own and restore the clean gasless flow - that's the EIP-3009
  *         win we sell to judges.
  */
 contract VouchToken is ERC20, EIP712 {

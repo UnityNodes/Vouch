@@ -1,5 +1,5 @@
 /**
- * ZGComputeClient — the single swappable seam for the compliance decision.
+ * ZGComputeClient - the single swappable seam for the compliance decision.
  * Live mode hits the 0G Compute broker (TEE-attested LLM inference). Mock
  * mode is deterministic for tests and offline dev.
  *

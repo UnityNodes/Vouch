@@ -1,36 +1,78 @@
-# Vouch — TEE-attested compliance gateway for AI-agent payments on 0G
+# Vouch - payments that vouch for themselves
 
 > **Zero Cup submission · 0G Global Vibe Coding Tournament**
 
-A payment gateway where every transaction is gated by a compliance LLM running inside a **0G Compute TEE**, the full audit trail lives on **0G Storage**, and the on-chain pointer is anchored on **0G Chain (Galileo)**. Anyone can click **"Verify"** on the public explorer and re-check the attestation themselves — **"trust us" becomes "verify yourself."**
+Vouch is a payment layer for AI agents. Before any money moves, every
+transaction is reviewed by an AI judge running inside a sealed enclave
+on **0G Compute**. The judge's reasoning, the verdict, and a
+cryptographic proof are written to **0G Storage**, and anyone can click
+**"Re-check"** on the public explorer to confirm the verdict was
+honest. *Don't trust us. Check the receipts.*
 
 ---
 
-## What this proves (and what it does not)
+## What Vouch actually proves
 
-The product makes the *payment decision* provable. The question shifts from "who owns this agent?" to "can you prove this payment was allowed honestly, by policy, without tampering?"
+Vouch doesn't tell you who the payer is. There is no bank-verified
+identity on 0G, and we won't pretend otherwise. What Vouch proves is
+that the **decision** was made honestly, by policy, without anyone in
+the middle tampering with the verdict.
 
-### Three honest limits (state them before a judge asks)
+That shifts the question from *"who is behind this agent?"* to
+*"can you prove this payment was allowed for a real reason, by a real
+policy, by a real LLM?"* For agent-to-agent commerce, that's the
+harder question, and the one Vouch answers cryptographically.
 
-1. **Identity:** we prove *decision honesty*, not *payer identity*. There is no bank-verified identity on 0G. This is a deliberate shift — building on 0G's actual stack rather than promising what the chain can't deliver.
-2. **Input integrity:** the TEE-attestation proves that THIS LLM in THIS enclave produced THIS output for THIS input. It does **not** prove the input is true, that the policy is correct, or that the LLM judged well. Execution honesty is guaranteed; input honesty is a separate layer (Phase 2 — signed/oracle-fed input).
-3. **No escrow-hold:** the decision is made *before* settle. If decision = NO, settle is never called and no money moves. Async escrow + human-in-the-loop are Phase 2.
+### What we're honest about
 
-These are the limits a competent technical judge will probe. Surfacing them up front signals you understand your own stack better than competitors who claim "0G solves everything."
+1. **We don't verify the payer's real-world identity.** Vouch proves
+   *decision honesty*, not *payer identity*. We build on what 0G
+   actually delivers instead of promising what the chain can't.
+2. **A TEE attests execution, not truth.** The attestation proves *this
+   LLM, in this enclave, produced this output for this input.* It does
+   not prove the input is true, the policy is correct, or that the LLM
+   judged well. Garbage in, garbage out, but with a signature on the
+   garbage, which is what makes it auditable.
+3. **No escrow needed.** The verdict comes *before* settlement. If the
+   verdict is *no*, settlement is never called and no money moves.
+   Async escrow and human-in-the-loop escalation are on the roadmap,
+   not in today's submission.
+
+A competent judge will probe exactly these limits. Naming them up front
+signals we understand our own stack better than competitors who claim
+*"0G solves everything."*
 
 ---
 
-## Why 0G and not a redeploy of an EVM clone
+## Why this is built on 0G - and only on 0G
 
-This is **not** a port of an existing Monad/Ethereum app. It uses 0G's actual primitives:
+Vouch is not a port of an Ethereum or Monad app. Every layer relies on
+something only 0G provides:
 
-- **0G Compute (TEE inference).** The compliance LLM runs in a TeeML-verifiable provider via `@0gfoundation/0g-compute-ts-sdk`. After every chat completion we call `broker.inference.processResponse(provider, chatId, content)` — the load-bearing line that returns `true/false` for whether the response was signed by the provider's TEE signer. Without this, the gateway is just another middleware.
-- **0G Storage (audit trail).** Each decision (input, verdict, attestation headers) is uploaded as a small JSON blob via `@0gfoundation/0g-storage-ts-sdk`'s `Indexer.upload(MemData, rpc, signer)`. The returned 32-byte root hash is durable, content-addressed, and cheap.
-- **0G Chain (settlement + on-chain pointer).** `ComplianceGateway.sol` emits `DecisionRecorded(payer, merchant, amount, decisionHash, storageRoot, allowed)` and persists the storage-root mapping. `VouchToken.sol` (vUSD) implements the **full EIP-3009 surface** — `transferWithAuthorization`, `DOMAIN_SEPARATOR`, `version`, `authorizationState` — so the x402 gasless "exact" flow works end-to-end. On Monad we had to fall back to "direct" raw transfers because the deployed token there lacks EIP-3009; on 0G the clean flow is restored.
+- **0G Compute runs the judge.** The compliance LLM lives inside a
+  TeeML-verifiable provider, queried through
+  `@0gfoundation/0g-compute-ts-sdk`. After every reply we call
+  `broker.inference.processResponse(provider, chatId, content)`. That
+  one line returns `true` if the response was signed by the provider's
+  TEE signer and `false` if it was tampered with. Without that line,
+  Vouch would just be middleware with extra steps.
+- **0G Storage keeps the audit trail honest.** Each decision (the
+  prompt, the verdict, the attestation headers) is uploaded as a small
+  JSON blob via `Indexer.upload(MemData, rpc, signer)`. The 32-byte
+  root hash is content-addressed, durable, and cheap enough to anchor
+  on-chain.
+- **0G Chain settles with zero friction.** `ComplianceGateway.sol`
+  records every decision on-chain via
+  `DecisionRecorded(payer, merchant, amount, decisionHash, storageRoot, allowed)`.
+  `VouchToken.sol` (vUSD) implements the full EIP-3009 surface
+  (`transferWithAuthorization`, `DOMAIN_SEPARATOR`, `version`,
+  `authorizationState`) so the x402 gasless settlement flow works
+  end-to-end without the workarounds we'd need on tokens that ship
+  without these primitives.
 
 ---
 
-## Architecture
+## How a single payment flows through Vouch
 
 ```
 agent
@@ -55,72 +97,88 @@ agent
 
 merchant-console / explorer
   └─→ polls /api/decisions
-  └─→ "Verify" button → POST /api/reverify
+  └─→ "Re-check" button → POST /api/reverify
         └─→ zg.verifyAttestation(provider, chatId) → broker.inference.processResponse → bool
 ```
 
-If A returns `allowed: false` or `attestation.verified: false`, the request returns **403 compliance_denied** with the rationale. **Settle is never called** — no money moves. That is the "no escrow needed" property.
+If step A returns a *no*, or the attestation comes back broken, the
+request stops with a 403 and the judge's rationale attached. Settlement
+is never called and no money moves. That property is why Vouch can
+ship without an escrow contract today.
 
 ---
 
-## Repo layout
+## What lives where
 
 ```
 packages/
-  shared/         x402 wire types, EIP-3009 helpers, ReceiptRecord v2 schema
-  zerogravity/    ZGComputeClient (live + mock), ZGStorageReceiptStore
-  middleware/     agentCheckout(): Express handler, x402 + compliance + settle
-  facilitator/    /verify + /settle endpoints (viem, EIP-3009 broadcast)
-  mcp/            pay_and_call MCP tool + x402 client (used by demo)
-  contracts/      VouchToken.sol, ComplianceGateway.sol (hardhat)
+  shared/         x402 wire types, EIP-3009 helpers, ReceiptRecord schema
+  zerogravity/    ZGComputeClient (live + mock), 0G Storage adapter
+  middleware/     agentCheckout(): Express handler that ties it all together
+  facilitator/    /verify + /settle endpoints (viem-based EIP-3009 relay)
+  mcp/            pay_and_call MCP tool for AI agents
+  contracts/      VouchToken.sol (zgUSD, EIP-3009) and ComplianceGateway.sol
 apps/
-  demo-merchant/  /premium-data + /api/decisions + /api/reverify
-  merchant-console/  Next.js explorer with live feed + Verify button
+  demo-merchant/      sample protected endpoint at /premium-data
+  merchant-console/   Next.js Explorer with the live feed and Re-check button
 scripts/
-  e2e.ts                local hardhat E2E (mock compliance, on-chain settle)
-  smoke-live-gate.ts    DAY-1 GATE smoke against real Galileo broker
-  generate-wallets.ts   funding bootstrap (5 EOAs → faucet drip)
-  fund-bootstrap.ts     daily balance check
+  e2e.ts                local Hardhat end-to-end test (mock judge, real settle)
+  smoke-live-gate.ts    one-shot smoke against the real 0G Galileo broker
+  generate-wallets.ts   creates the 5 funding wallets used during bootstrap
+  fund-bootstrap.ts     daily readiness check against your wallets
 ```
 
 ---
 
-## Quick start (mock-mode, no funding required)
+## Quick start - no funding required
 
 ```bash
 pnpm install
 pnpm e2e
 ```
 
-This spawns a local Hardhat node, deploys `VouchToken`, runs:
-- **Happy path:** mock-allowed agent pays via x402 → 200 + real txHash
-- **Blocked path:** agent on policy deny-list → 403 `compliance_denied`
+This boots a local Hardhat node, deploys `VouchToken`, and walks two
+flows back-to-back.
 
-Both produce a `ReceiptRecord` with `attestation.verifiabilityKind === "mock"`.
+The legitimate payment: an agent who passes the mock judge gets charged
+and receives the protected resource. You get a real transaction hash on
+the local chain.
 
-To run the live stack against the real Galileo broker, see **Live demo (testnet)** below.
+The suspicious payment: an agent on the policy deny-list gets blocked
+with a 403. No transaction, no money moved.
+
+Both produce a receipt with a mock attestation. For the live flow
+against the real 0G Galileo broker, jump to the live demo section
+below.
 
 ---
 
-## Live demo (testnet — requires funded wallet)
+## Live demo - needs a funded wallet
 
 ### 1. Funding bootstrap
 
-The `InferenceServing` contract requires **3 OG minimum** on `addLedger` (per the official [`0g-compute-ts-starter-kit`](https://github.com/0gfoundation/0g-compute-ts-starter-kit) README). Plus 1 OG per provider on `transferFund`, plus ~1 OG buffer for storage uploads + contract deploys + settlement gas. **Realistic target on `PRIMARY_PRIVATE_KEY`: ≥ 5 OG.**
+To run live, the operator wallet needs at least 5 OG. That covers the
+broker's `addLedger(3)` deposit, 1 OG per provider on `transferFund`,
+and roughly 1 OG of headroom for storage uploads, contract deploys, and
+settlement gas. The 3-OG minimum is enforced by 0G's `InferenceServing`
+contract; values below that simply revert (see the official
+[`0g-compute-ts-starter-kit`](https://github.com/0gfoundation/0g-compute-ts-starter-kit)).
 
-Funding sources:
+Where the OG comes from:
 
 | Source | Amount | Limit |
 |---|---|---|
-| [faucet.0g.ai](https://faucet.0g.ai) | 0.1-0.5 OG | per wallet, **per day** (resets ~24h) |
+| [faucet.0g.ai](https://faucet.0g.ai) | 0.1 to 0.5 OG | per wallet, per day (resets ~24h) |
 | [Google Cloud Faucet](https://cloud.google.com/application/web3/faucet/0g/galileo) | 0.1 OG | per wallet per day, separate quota |
-| [0G Discord #faucet](https://discord.com/invite/0glabs) | **on request** | docs explicitly direct here for >0.1 OG/day |
+| [0G Discord #faucet](https://discord.com/invite/0glabs) | on request | the docs officially route bigger asks here |
 
-5 dripping wallets × faucets give ~3 OG/day — short of the 5-OG target. Discord is the **supported** channel for the gap, not a workaround.
+Five wallets dripping across both faucets stack to roughly 3 OG per
+day, which is still short of the 5-OG target. Discord is the supported
+channel for the gap, not a workaround.
 
 Defaults in [packages/zerogravity/src/live/broker.ts](packages/zerogravity/src/live/broker.ts):
-- `addLedger(3 OG)` — `ZG_LEDGER_INITIAL_OG` override (contract enforces ≥3 in v0.6.x)
-- `transferFund(provider, 'inference', 1 OG)` — `ZG_PROVIDER_FUND_OG` override
+- `addLedger(3 OG)`. Override with `ZG_LEDGER_INITIAL_OG`. The contract enforces a 3-OG minimum in v0.6.x.
+- `transferFund(provider, 'inference', 1 OG)`. Override with `ZG_PROVIDER_FUND_OG`.
 
 ```bash
 npx tsx scripts/generate-wallets.ts        # one-shot: 5 EOAs → scripts/wallets.json (gitignored)
@@ -141,25 +199,29 @@ pnpm --filter @agentcheckout/contracts run deploy:galileo
 # copy both into .env
 ```
 
-### 3. DAY-1 GATE smoke (the load-bearing test)
+### 3. Smoke-test the live judge (the one test that matters)
 
-This proves the whole product thesis: a single live inference call where `processResponse(...)` returns `true`.
+This is the load-bearing check for the whole product: a single live
+inference call where `processResponse(...)` returns `true`.
 
 ```bash
 ZG_COMPUTE_MODE=live npx tsx scripts/smoke-live-gate.ts
-# expected output: "GATE PASS ✅ — attestation verified by processResponse()"
+# expected output: "GATE PASS ✅ - attestation verified by processResponse()"
 ```
 
-### 4. Run the merchant + explorer
+### 4. Run the merchant and explorer
 
 ```bash
 ZG_COMPUTE_MODE=live ZG_STORAGE_MODE=live pnpm dev
 # demo-merchant : http://localhost:4020
-# facilitator    : http://localhost:4021
-# explorer       : http://localhost:3000
+# facilitator   : http://localhost:4021
+# explorer      : http://localhost:3000
 ```
 
-In the explorer, click **Trigger paid flow** and **Trigger blocked flow**. Both appear in the live feed; click **Verify** on either — `broker.inference.processResponse(...)` re-runs against the broker and the button turns ✅ when the attestation is honest.
+In the Explorer, click "Try a legitimate payment" and "Try a suspicious
+payment". Both appear in the live feed. Hit "Re-check" on either row
+and the merchant calls `broker.inference.processResponse(...)` against
+the broker; the button turns green when the attestation is honest.
 
 ---
 
@@ -169,10 +231,10 @@ See [.env.example](.env.example) for the full list. The hot ones:
 
 | Variable | Purpose |
 |---|---|
-| `PRIMARY_PRIVATE_KEY` | EOA used for broker ledger, provider auth, storage signer, facilitator settle |
+| `PRIMARY_PRIVATE_KEY` | EOA used for the broker ledger, provider auth, storage signer, and facilitator settle |
 | `GALILEO_RPC_URL` | default `https://evmrpc-testnet.0g.ai` |
-| `ZG_COMPUTE_MODE` | `live` (broker) or `mock` (deterministic policy) — default `mock` |
-| `ZG_STORAGE_MODE` | `live` (0G Storage) or `mock` (JsonReceiptStore) — default `mock` |
+| `ZG_COMPUTE_MODE` | `live` (real broker) or `mock` (deterministic policy). Defaults to `mock`. |
+| `ZG_STORAGE_MODE` | `live` (0G Storage) or `mock` (JsonReceiptStore). Defaults to `mock`. |
 | `GALILEO_ATOKEN_ADDRESS` | populated by `deploy:galileo` |
 | `GALILEO_GATEWAY_ADDRESS` | populated by `deploy:galileo` |
 | `MERCHANT_ADDRESS` | recipient EOA for paid demo flows |
@@ -180,18 +242,24 @@ See [.env.example](.env.example) for the full list. The hot ones:
 
 ---
 
-## What's deliberately deferred (per the spec)
+## What's deliberately deferred
 
-The group-stage submission is a **thin vertical slice** that proves the critical path end-to-end. The following are scoped to later rounds:
+The group-stage submission is a thin vertical slice that proves the
+critical path end-to-end. The next batch of features is scoped to
+later rounds:
 
-- **Per-agent policy registry** — `ComplianceGateway` extension with `mapping(agent => Policy)`. Ro32.
-- **AgenticID integration** — gate authorizes via `authorizeUsage` on the ERC-7857 [AgenticID](https://github.com/0gfoundation/agenticID-examples) standard, connecting the payment decision to the agent's on-chain identity. Ro16.
-- **Compliance Passport** — portable on-chain reputation accreted from clean-tx history. Ro16.
-- **Human-in-the-loop escalation + escrow-hold** — async delayed decisions. Quarters.
-- **Multi-agent budget tree** — parent agent sets sub-agent limits. Quarters.
-- **DA-layer decision stream** — trustless auditor reconstruction. Phase 2.
+- **Per-agent policy registry** (Ro32). Extends `ComplianceGateway` with `mapping(agent => Policy)` so the on-chain rules are per agent, not global.
+- **AgenticID integration** (Ro16). The gate would authorize via `authorizeUsage` on the ERC-7857 [AgenticID](https://github.com/0gfoundation/agenticID-examples) standard, linking each payment to the agent's on-chain identity.
+- **Compliance Passport** (Ro16). A portable on-chain reputation accreted from clean-transaction history.
+- **Human-in-the-loop escalation and escrow-hold** (Quarters). For async, delayed decisions.
+- **Multi-agent budget tree** (Quarters). A parent agent sets sub-agent spending limits.
+- **DA-layer decision stream** (Phase 2). For trustless auditor reconstruction.
 
-Resisting feature creep is itself a position — the four primitives in this submission cover the whole tournament-judging surface (x402, compliance gate, on-chain settlement, public verifiability) and rest on real 0G primitives, not promised ones. The deferred items each map to a real 0G primitive (AgenticID, etc.), not vapor.
+Resisting feature creep is itself a position. The four primitives in
+this submission cover the whole tournament-judging surface (x402, the
+compliance gate, on-chain settlement, public verifiability) and they
+all rest on real 0G primitives, not promised ones. The deferred items
+each map to a real 0G primitive too, not vapor.
 
 ---
 

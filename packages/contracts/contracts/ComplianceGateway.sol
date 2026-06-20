@@ -9,7 +9,7 @@ pragma solidity ^0.8.24;
  *         outcome. Cheap to write, auditable forever.
  *
  *         Group-stage: anyone can call recordDecision (demo simplicity). In
- *         Ro32 this grows into a per-agent policy registry — the same contract
+ *         Ro32 this grows into a per-agent policy registry - the same contract
  *         will also hold `mapping(address agent => Policy)` so the off-chain
  *         LLM judges against on-chain rules.
  */

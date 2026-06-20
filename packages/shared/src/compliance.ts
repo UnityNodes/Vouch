@@ -3,7 +3,7 @@ import { z } from "zod";
 export type SettlementStatus = "SUCCESS" | "BLOCKED" | "FAILED";
 
 /**
- * AttestationRef — the verifiable proof that the compliance LLM ran inside a
+ * AttestationRef - the verifiable proof that the compliance LLM ran inside a
  * TEE and produced THIS output for THIS input. Persisted on every receipt so
  * anyone can re-verify after the fact by calling broker.inference.processResponse.
  */

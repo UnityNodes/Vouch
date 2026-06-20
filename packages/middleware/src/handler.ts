@@ -18,7 +18,7 @@ import { buildRequirements, type AssetConfig, type RouteConfig } from "./buildRe
 import { makeFacilitatorClient } from "./facilitatorClient";
 
 /**
- * agentCheckoutConfig — the merchant's one-line integration point.
+ * agentCheckoutConfig - the merchant's one-line integration point.
  *
  * The compliance gate (the product thesis) is the call to `zg.decide(...)`:
  * an LLM running in a 0G Compute TEE evaluates the payment intent against a
@@ -142,7 +142,7 @@ export function agentCheckout(config: AgentCheckoutConfig): RequestHandler {
       return;
     }
 
-    // a. compliance gate — TEE-attested LLM verdict (the product thesis)
+    // a. compliance gate - TEE-attested LLM verdict (the product thesis)
     const decision = await config.zg.decide({
       payer,
       merchant: config.payTo,

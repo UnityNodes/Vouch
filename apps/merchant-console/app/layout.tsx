@@ -23,9 +23,9 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Vouch · TEE-attested compliance gateway on 0G",
+  title: "Vouch - payments that vouch for themselves",
   description:
-    "Payment gateway for AI agents. Every transaction is gated by a TEE-attested LLM decision running on 0G Compute, with the full audit trail on 0G Storage. Trust us → verify yourself.",
+    "Every payment Vouch handles is reviewed by an AI judge running inside a sealed enclave on 0G Compute. The reasoning, the verdict, and the cryptographic proof live on 0G Storage - and anyone can re-check them with one click. Don't trust us. Check the receipts.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

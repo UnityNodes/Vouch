@@ -50,15 +50,19 @@ const totalOg = Number(ethers.formatEther(total));
 console.log(`\n  total: ${ethers.formatEther(total)} OG`);
 
 if (totalOg >= 5.0) {
-  console.log(`\n✅ READY — sum ≥ 5 OG. Consolidate onto PRIMARY_PRIVATE_KEY and run smoke-live-gate.`);
-  console.log(`   Will spend: addLedger(3) + transferFund(1) + ~1 OG on storage/deploys/settle.`);
+  console.log(`\n✅ Ready to go - you have at least 5 OG.`);
+  console.log(`   Move it all onto PRIMARY_PRIVATE_KEY and run the live smoke test.`);
+  console.log(`   The first run will spend ~4 OG on the broker (addLedger + transferFund)`);
+  console.log(`   and ~1 OG on storage uploads, deploys, and settlement gas.`);
 } else if (totalOg >= 4.0) {
-  console.log(`\n⚠️  MINIMAL — sum ${totalOg.toFixed(2)} OG covers addLedger(3) + transferFund(1) with no buffer.`);
-  console.log(`   One shot only — any retry/storage upload/deploy will run out.`);
-  console.log(`   Strongly recommended: Discord topup before running smoke (see scripts/funding-log.md).`);
+  console.log(`\n⚠️  Just barely - ${totalOg.toFixed(2)} OG.`);
+  console.log(`   That covers the one-shot broker init, but leaves no headroom.`);
+  console.log(`   Any retry or contract deploy will hit zero.`);
+  console.log(`   Strongly recommend a Discord top-up first (see scripts/funding-log.md).`);
 } else {
-  console.log(`\n⏳ KEEP DRIPPING — sum ${totalOg.toFixed(2)} OG < 4 OG.`);
-  console.log(`   The InferenceServing contract enforces a 3 OG minimum on addLedger;`);
-  console.log(`   anything lower will revert. Faucets alone give ~3 OG/day across 5 wallets.`);
-  console.log(`   Faster: post the Discord template from scripts/funding-log.md.`);
+  console.log(`\n⏳ Still short - ${totalOg.toFixed(2)} OG of the 4 OG minimum.`);
+  console.log(`   The 0G InferenceServing contract requires at least 3 OG on addLedger;`);
+  console.log(`   anything less will revert. Faucets alone give about 3 OG per day`);
+  console.log(`   across five wallets. The fastest path is the Discord template in`);
+  console.log(`   scripts/funding-log.md - the 0G docs route bigger asks there directly.`);
 }

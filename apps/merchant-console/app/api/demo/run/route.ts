@@ -3,7 +3,7 @@
  *
  * Generates a synthetic payment intent (paid or blocked), runs it through the
  * shared MockZGComputeClient, and records a receipt directly in the in-memory
- * store. No demo-merchant required, no chain required — perfect for a
+ * store. No demo-merchant required, no chain required - perfect for a
  * Vercel/Ubuntu single-process deployment.
  */
 import { randomBytes, randomUUID } from "node:crypto";
