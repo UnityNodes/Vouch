@@ -13,13 +13,19 @@ import type { Indexer as IndexerType, MemData as MemDataType } from "@0gfoundati
 import type { ReceiptStore } from "@agentcheckout/shared/store";
 import type { ReceiptRecord } from "@agentcheckout/shared";
 
-// Same Rollup-chunk re-export issue as the compute SDK - load via CJS to
-// dodge tsx's ESM resolution bug.
+// Same Rollup-chunk re-export issue as the compute SDK - load via CJS to dodge
+// tsx's ESM resolution bug. Lazy (not top-level): the barrel statically
+// re-exports this file, so a top-level require would break mock mode where the
+// optional SDK is absent.
 const requireSdk = createRequire(import.meta.url);
-const { Indexer, MemData } = requireSdk("@0gfoundation/0g-storage-ts-sdk") as {
-  Indexer: typeof IndexerType;
-  MemData: typeof MemDataType;
-};
+type StorageSdk = { Indexer: typeof IndexerType; MemData: typeof MemDataType };
+let sdk: StorageSdk | undefined;
+function loadSdk(): StorageSdk {
+  if (!sdk) {
+    sdk = requireSdk("@0gfoundation/0g-storage-ts-sdk") as StorageSdk;
+  }
+  return sdk;
+}
 
 const DEFAULT_INDEXER = "https://indexer-storage-testnet-turbo.0g.ai";
 
@@ -38,6 +44,7 @@ export class ZGStorageReceiptStore implements ReceiptStore {
         "PRIMARY_PRIVATE_KEY missing - required for 0G Storage uploads. Falling back to JsonReceiptStore is recommended for local dev.",
       );
     }
+    const { Indexer } = loadSdk();
     const provider = new ethers.JsonRpcProvider(rpcUrl);
     this.signer = new ethers.Wallet(pk, provider);
     this.rpcUrl = rpcUrl;
@@ -45,6 +52,7 @@ export class ZGStorageReceiptStore implements ReceiptStore {
   }
 
   async append(r: ReceiptRecord): Promise<void> {
+    const { MemData } = loadSdk();
     const blob = Buffer.from(JSON.stringify(r), "utf8");
     const file = new MemData(blob);
 
