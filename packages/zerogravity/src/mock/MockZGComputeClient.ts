@@ -5,7 +5,7 @@ import type {
   DecideInput,
   DecideResult,
   ZGComputeClient,
-} from "../types.js";
+} from "../types";
 
 /**
  * Deterministic policy for offline dev + e2e. Constructor options let tests

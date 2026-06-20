@@ -2,7 +2,7 @@ import hre from "hardhat";
 import { parseUnits, formatEther } from "viem";
 
 /**
- * Deploy AgentCheckoutToken (EIP-3009 acUSD) + ComplianceGateway and optionally
+ * Deploy VouchToken (EIP-3009 vUSD) + ComplianceGateway and optionally
  * mint to demo addresses. Networks:
  *   pnpm --filter @agentcheckout/contracts run deploy:galileo   (0G Galileo)
  *   pnpm --filter @agentcheckout/contracts run deploy:local     (hardhat node)
@@ -18,9 +18,9 @@ async function main() {
     console.log(`deployer: ${wallet.account.address}  balance: ${formatEther(bal)} OG`);
   }
 
-  // 1. AgentCheckoutToken
-  const token = await hre.viem.deployContract("AgentCheckoutToken", []);
-  console.log(`\nAgentCheckoutToken (acUSD) deployed at: ${token.address}`);
+  // 1. VouchToken
+  const token = await hre.viem.deployContract("VouchToken", []);
+  console.log(`\nVouchToken (vUSD) deployed at: ${token.address}`);
 
   const mintTo = (process.env.MINT_TO ?? "")
     .split(",")
@@ -31,7 +31,7 @@ async function main() {
     const amount = parseUnits("1000", 6);
     const hash = await token.write.mint([addr, amount]);
     await pub.waitForTransactionReceipt({ hash });
-    console.log(`  minted 1000 acUSD -> ${addr}`);
+    console.log(`  minted 1000 vUSD -> ${addr}`);
   }
 
   // 2. ComplianceGateway

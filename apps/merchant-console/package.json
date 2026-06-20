@@ -10,7 +10,7 @@
     "clean": "rimraf .next .turbo"
   },
   "dependencies": {
-    "@agentcheckout/cleanverse": "workspace:*",
+    "@agentcheckout/zerogravity": "workspace:*",
     "@agentcheckout/mcp": "workspace:*",
     "@agentcheckout/shared": "workspace:*",
     "next": "^14.2.18",

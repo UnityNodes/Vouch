@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { MockZGComputeClient } from "./MockZGComputeClient.js";
+import { MockZGComputeClient } from "./MockZGComputeClient";
 
 const c = new MockZGComputeClient();
 

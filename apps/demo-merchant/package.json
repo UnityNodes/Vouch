@@ -11,7 +11,7 @@
     "clean": "rimraf dist .turbo"
   },
   "dependencies": {
-    "@agentcheckout/cleanverse": "workspace:*",
+    "@agentcheckout/zerogravity": "workspace:*",
     "@agentcheckout/middleware": "workspace:*",
     "@agentcheckout/shared": "workspace:*",
     "cors": "^2.8.5",

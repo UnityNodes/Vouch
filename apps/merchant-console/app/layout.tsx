@@ -23,7 +23,7 @@ const mono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AgentCheckout 0G · TEE-attested compliance gateway",
+  title: "Vouch · TEE-attested compliance gateway on 0G",
   description:
     "Payment gateway for AI agents. Every transaction is gated by a TEE-attested LLM decision running on 0G Compute, with the full audit trail on 0G Storage. Trust us → verify yourself.",
 };

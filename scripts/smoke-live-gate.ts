@@ -15,7 +15,7 @@ import "dotenv/config";
 import { makeZGComputeClient } from "@agentcheckout/zerogravity";
 
 async function main() {
-  console.log("[smoke] creating live ZGComputeClient — addLedger + pick TeeML + transferFund…");
+  console.log("[smoke] Vouch: creating live ZGComputeClient — addLedger + pick TeeML + transferFund…");
   const t0 = Date.now();
   const client = await makeZGComputeClient("live");
   console.log(`[smoke] client ready in ${Date.now() - t0}ms`);

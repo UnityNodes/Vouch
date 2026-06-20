@@ -4,9 +4,6 @@ import { useEffect, useState } from "react";
 import type { ReceiptRecord } from "@agentcheckout/shared";
 import { VerifyButton } from "../components/VerifyButton";
 
-const DEMO_MERCHANT =
-  process.env.NEXT_PUBLIC_DEMO_MERCHANT_URL ?? "http://localhost:4020";
-
 export default function Page() {
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -14,7 +11,7 @@ export default function Page() {
 
   async function refresh() {
     try {
-      const r = await fetch(`${DEMO_MERCHANT}/api/decisions`, { cache: "no-store" });
+      const r = await fetch(`/api/decisions`, { cache: "no-store" });
       const j = (await r.json()) as { decisions: ReceiptRecord[] };
       setReceipts(j.decisions ?? []);
       setError(null);
@@ -64,14 +61,14 @@ export default function Page() {
             margin: 0,
           }}
         >
-          0G Compliance Explorer
+          Vouch <span style={{ color: "#888", fontSize: "1.4rem", fontWeight: 400 }}>· Compliance Explorer</span>
         </h1>
         <p style={{ color: "#aaa", marginTop: 6, maxWidth: 720 }}>
-          Live TEE-attested payment decisions. Each row was decided by an LLM
-          running inside a 0G Compute TEE; the decision + attestation proof is
-          stored on 0G Storage with an on-chain pointer. Click <b>Verify</b> to
-          re-check the attestation against the broker — &ldquo;trust us&rdquo;
-          becomes &ldquo;verify yourself.&rdquo;
+          Live TEE-attested payment decisions on 0G. Each row was decided by
+          an LLM running inside a 0G Compute TEE; the decision + attestation
+          proof is stored on 0G Storage with an on-chain pointer. Click{" "}
+          <b>Verify</b> to re-check the attestation against the broker —
+          &ldquo;trust us&rdquo; becomes &ldquo;verify yourself.&rdquo;
         </p>
       </header>
 
@@ -91,12 +88,12 @@ export default function Page() {
           {demoBusy === "blocked" ? "running…" : "Trigger blocked flow"}
         </button>
         <a
-          href={`${DEMO_MERCHANT}/`}
+          href="https://github.com/0gfoundation/0g-compute-ts-starter-kit"
           target="_blank"
           rel="noreferrer"
           style={{ ...demoBtnStyle("#333"), textDecoration: "none", display: "inline-block" }}
         >
-          demo-merchant status
+          0G Compute SDK docs ↗
         </a>
       </section>
 
@@ -198,7 +195,7 @@ export default function Page() {
                 )}
               </Td>
               <Td>
-                <VerifyButton attestation={r.attestation} merchantOrigin={DEMO_MERCHANT} />
+                <VerifyButton attestation={r.attestation} />
               </Td>
             </tr>
           ))}
@@ -206,9 +203,10 @@ export default function Page() {
       </table>
 
       <footer style={{ marginTop: 24, color: "#666", fontSize: 12 }}>
-        Polling <code>{DEMO_MERCHANT}/api/decisions</code> every 3s · Verify hits{" "}
-        <code>{DEMO_MERCHANT}/api/reverify</code> which calls{" "}
-        <code>broker.inference.processResponse(...)</code>.
+        Polling <code>/api/decisions</code> every 3s · Verify hits{" "}
+        <code>/api/reverify</code> which calls{" "}
+        <code>broker.inference.processResponse(...)</code> in live mode (mock-mode
+        returns deterministic true).
       </footer>
     </main>
   );

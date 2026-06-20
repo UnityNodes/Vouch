@@ -1,4 +1,4 @@
-import type { DecideCode, DecideInput } from "../types.js";
+import type { DecideCode, DecideInput } from "../types";
 
 /**
  * Hard-coded ruleset for the group-stage. The LLM is the judge; the rules below

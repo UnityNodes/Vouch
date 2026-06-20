@@ -6,18 +6,19 @@ import {EIP712} from "@openzeppelin/contracts/utils/cryptography/EIP712.sol";
 import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
 /**
- * @title AgentCheckoutToken (acUSD)
+ * @title VouchToken (vUSD)
  * @notice ERC-20 + full EIP-3009 (`transferWithAuthorization`, `authorizationState`,
  *         `DOMAIN_SEPARATOR`, `version`) so the x402 "exact" gasless flow works
  *         end-to-end on 0G Galileo. Public `mint` makes it a self-serve faucet
  *         for the demo. NOT production-grade.
  *
- *         On Monad the AgentCheckout demo had to fall back to a "direct" signed
- *         transfer because Cleanverse aUSDC has no EIP-3009 (version()/
- *         DOMAIN_SEPARATOR revert). On 0G we deploy our own token and restore
- *         the clean gasless flow — that's the EIP-3009 win we sell to judges.
+ *         Why our own token: on Monad the AgentCheckout demo had to fall back
+ *         to "direct" signed transfers because the bank-issued token there
+ *         lacks EIP-3009 (version()/DOMAIN_SEPARATOR revert). On 0G we deploy
+ *         our own and restore the clean gasless flow — that's the EIP-3009
+ *         win we sell to judges.
  */
-contract AgentCheckoutToken is ERC20, EIP712 {
+contract VouchToken is ERC20, EIP712 {
     uint8 private constant _DECIMALS = 6;
 
     // keccak256("TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)")
@@ -31,8 +32,8 @@ contract AgentCheckoutToken is ERC20, EIP712 {
     event AuthorizationUsed(address indexed authorizer, bytes32 indexed nonce);
 
     constructor()
-        ERC20("AgentCheckout USD", "acUSD")
-        EIP712("AgentCheckout USD", "1")
+        ERC20("Vouch USD", "vUSD")
+        EIP712("Vouch USD", "1")
     {
         _mint(msg.sender, 1_000_000 * 10 ** uint256(_DECIMALS));
     }
@@ -59,7 +60,7 @@ contract AgentCheckoutToken is ERC20, EIP712 {
     }
 
     /// @notice EIP-3009 gasless transfer. The holder signs off-chain, any relayer
-    ///         (the AgentCheckout facilitator) broadcasts.
+    ///         (the Vouch facilitator) broadcasts.
     function transferWithAuthorization(
         address from,
         address to,
@@ -69,9 +70,9 @@ contract AgentCheckoutToken is ERC20, EIP712 {
         bytes32 nonce,
         bytes calldata signature
     ) external {
-        require(block.timestamp > validAfter, "acUSD: auth not yet valid");
-        require(block.timestamp < validBefore, "acUSD: auth expired");
-        require(!_authorizationStates[from][nonce], "acUSD: nonce already used");
+        require(block.timestamp > validAfter, "vUSD: auth not yet valid");
+        require(block.timestamp < validBefore, "vUSD: auth expired");
+        require(!_authorizationStates[from][nonce], "vUSD: nonce already used");
 
         bytes32 structHash = keccak256(
             abi.encode(
@@ -86,7 +87,7 @@ contract AgentCheckoutToken is ERC20, EIP712 {
         );
         bytes32 digest = _hashTypedDataV4(structHash);
         address signer = ECDSA.recover(digest, signature);
-        require(signer == from, "acUSD: invalid signature");
+        require(signer == from, "vUSD: invalid signature");
 
         _authorizationStates[from][nonce] = true;
         emit AuthorizationUsed(from, nonce);

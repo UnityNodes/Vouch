@@ -10,13 +10,11 @@ interface AttestationRef {
 
 interface VerifyButtonProps {
   attestation: AttestationRef;
-  /** demo-merchant base URL (it owns /api/reverify which hits broker.processResponse). */
-  merchantOrigin?: string;
 }
 
 type State = "idle" | "loading" | "ok" | "fail";
 
-export function VerifyButton({ attestation, merchantOrigin }: VerifyButtonProps) {
+export function VerifyButton({ attestation }: VerifyButtonProps) {
   const [state, setState] = useState<State>("idle");
   const [detail, setDetail] = useState<string>("");
 
@@ -24,8 +22,7 @@ export function VerifyButton({ attestation, merchantOrigin }: VerifyButtonProps)
     setState("loading");
     setDetail("");
     try {
-      const base = merchantOrigin ?? process.env.NEXT_PUBLIC_DEMO_MERCHANT_URL ?? "http://localhost:4020";
-      const r = await fetch(`${base.replace(/\/$/, "")}/api/reverify`, {
+      const r = await fetch(`/api/reverify`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

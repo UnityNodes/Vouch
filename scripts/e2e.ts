@@ -2,7 +2,7 @@
  * End-to-end vertical slice on a LOCAL Hardhat node (self-contained, no faucet
  * required for the compliance gate, no 0G testnet exposure for settlement):
  *   1. spawn `hardhat node`
- *   2. deploy AgentCheckoutToken (EIP-3009), mint to the agent
+ *   2. deploy VouchToken (EIP-3009), mint to the agent
  *   3. boot facilitator + a merchant (agentCheckout) in-process
  *   4. happy path: agent pays via x402 -> 200 + real txHash (mock compliance ALLOWED)
  *   5. blocked-by-deny-list path: agent on policy deny-list -> 403 compliance_denied
@@ -92,7 +92,7 @@ async function main() {
     ok("hardhat node ready (chainId 31337)");
 
     // 2. deploy + mint to agent
-    log("deploying AgentCheckoutToken + minting to agent...");
+    log("deploying VouchToken + minting to agent...");
     const agentAddr = privateKeyToAccount(ACC.agent).address;
     const deployOut = await runCapture(
       "pnpm",
@@ -102,7 +102,7 @@ async function main() {
     const m = deployOut.match(/GALILEO_ATOKEN_ADDRESS=(0x[0-9a-fA-F]{40})/);
     if (!m) fail(`could not parse deployed token address from:\n${deployOut}`);
     const atoken = m![1] as `0x${string}`;
-    ok(`AgentCheckoutToken deployed at ${atoken}`);
+    ok(`VouchToken deployed at ${atoken}`);
 
     // 3a. facilitator (in-process)
     const clients = makeClients({ rpcUrl: RPC, chainId: CHAIN_ID, privateKey: ACC.facilitator });
@@ -115,10 +115,10 @@ async function main() {
     const store = new JsonReceiptStore(path.join(ROOT, ".data", "e2e-receipts.json"));
     const asset: AssetConfig = {
       address: atoken,
-      name: "AgentCheckout USD",
+      name: "Vouch USD",
       version: "1",
       decimals: 6,
-      symbol: "acUSD",
+      symbol: "vUSD",
     };
     const merchant = express();
     merchant.use(

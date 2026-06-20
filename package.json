@@ -1,8 +1,8 @@
 {
-  "name": "agentcheckout-0g",
+  "name": "vouch",
   "private": true,
   "version": "0.1.0",
-  "description": "AgentCheckout on 0G — TEE-attested compliance gateway for AI-agent payments. Decisions made by an LLM in a 0G Compute TEE, audit trail on 0G Storage, settlement on 0G Chain (Galileo).",
+  "description": "Vouch — every AI-agent payment is provably allowed. Decisions made by an LLM in a 0G Compute TEE, audit trail on 0G Storage, settlement on 0G Chain (Galileo).",
   "packageManager": "pnpm@10.14.0",
   "engines": {
     "node": ">=20"

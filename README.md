@@ -1,4 +1,4 @@
-# AgentCheckout 0G — TEE-attested compliance gateway for AI-agent payments
+# Vouch — TEE-attested compliance gateway for AI-agent payments on 0G
 
 > **Zero Cup submission · 0G Global Vibe Coding Tournament**
 
@@ -26,7 +26,7 @@ This is **not** a port of an existing Monad/Ethereum app. It uses 0G's actual pr
 
 - **0G Compute (TEE inference).** The compliance LLM runs in a TeeML-verifiable provider via `@0gfoundation/0g-compute-ts-sdk`. After every chat completion we call `broker.inference.processResponse(provider, chatId, content)` — the load-bearing line that returns `true/false` for whether the response was signed by the provider's TEE signer. Without this, the gateway is just another middleware.
 - **0G Storage (audit trail).** Each decision (input, verdict, attestation headers) is uploaded as a small JSON blob via `@0gfoundation/0g-storage-ts-sdk`'s `Indexer.upload(MemData, rpc, signer)`. The returned 32-byte root hash is durable, content-addressed, and cheap.
-- **0G Chain (settlement + on-chain pointer).** `ComplianceGateway.sol` emits `DecisionRecorded(payer, merchant, amount, decisionHash, storageRoot, allowed)` and persists the storage-root mapping. `AgentCheckoutToken.sol` (acUSD) implements the **full EIP-3009 surface** — `transferWithAuthorization`, `DOMAIN_SEPARATOR`, `version`, `authorizationState` — so the x402 gasless "exact" flow works end-to-end. On Monad we had to fall back to "direct" raw transfers because the deployed token there lacks EIP-3009; on 0G the clean flow is restored.
+- **0G Chain (settlement + on-chain pointer).** `ComplianceGateway.sol` emits `DecisionRecorded(payer, merchant, amount, decisionHash, storageRoot, allowed)` and persists the storage-root mapping. `VouchToken.sol` (vUSD) implements the **full EIP-3009 surface** — `transferWithAuthorization`, `DOMAIN_SEPARATOR`, `version`, `authorizationState` — so the x402 gasless "exact" flow works end-to-end. On Monad we had to fall back to "direct" raw transfers because the deployed token there lacks EIP-3009; on 0G the clean flow is restored.
 
 ---
 
@@ -51,7 +51,7 @@ agent
               ├─ D. Facilitator.verify(payload, requirements) → checks EIP-712 signature
               │
               └─ E. Facilitator.settle(payload, requirements)
-                    └─ AgentCheckoutToken.transferWithAuthorization(...) → real txHash on Galileo
+                    └─ VouchToken.transferWithAuthorization(...) → real txHash on Galileo
 
 merchant-console / explorer
   └─→ polls /api/decisions
@@ -72,7 +72,7 @@ packages/
   middleware/     agentCheckout(): Express handler, x402 + compliance + settle
   facilitator/    /verify + /settle endpoints (viem, EIP-3009 broadcast)
   mcp/            pay_and_call MCP tool + x402 client (used by demo)
-  contracts/      AgentCheckoutToken.sol, ComplianceGateway.sol (hardhat)
+  contracts/      VouchToken.sol, ComplianceGateway.sol (hardhat)
 apps/
   demo-merchant/  /premium-data + /api/decisions + /api/reverify
   merchant-console/  Next.js explorer with live feed + Verify button
@@ -92,7 +92,7 @@ pnpm install
 pnpm e2e
 ```
 
-This spawns a local Hardhat node, deploys `AgentCheckoutToken`, runs:
+This spawns a local Hardhat node, deploys `VouchToken`, runs:
 - **Happy path:** mock-allowed agent pays via x402 → 200 + real txHash
 - **Blocked path:** agent on policy deny-list → 403 `compliance_denied`
 

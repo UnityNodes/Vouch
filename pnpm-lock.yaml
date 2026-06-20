@@ -53,15 +53,15 @@ importers:
 
   apps/demo-merchant:
     dependencies:
-      '@agentcheckout/cleanverse':
-        specifier: workspace:*
-        version: link:../../packages/cleanverse
       '@agentcheckout/middleware':
         specifier: workspace:*
         version: link:../../packages/middleware
       '@agentcheckout/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@agentcheckout/zerogravity':
+        specifier: workspace:*
+        version: link:../../packages/zerogravity
       cors:
         specifier: ^2.8.5
         version: 2.8.6
@@ -90,15 +90,15 @@ importers:
 
   apps/merchant-console:
     dependencies:
-      '@agentcheckout/cleanverse':
-        specifier: workspace:*
-        version: link:../../packages/cleanverse
       '@agentcheckout/mcp':
         specifier: workspace:*
         version: link:../../packages/mcp
       '@agentcheckout/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@agentcheckout/zerogravity':
+        specifier: workspace:*
+        version: link:../../packages/zerogravity
       next:
         specifier: ^14.2.18
         version: 14.2.35(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -133,19 +133,6 @@ importers:
       typescript:
         specifier: ^5.7.2
         version: 5.9.3
-
-  packages/cleanverse:
-    dependencies:
-      '@agentcheckout/shared':
-        specifier: workspace:*
-        version: link:../shared
-    devDependencies:
-      typescript:
-        specifier: ^5.7.2
-        version: 5.9.3
-      vitest:
-        specifier: ^2.1.8
-        version: 2.1.9(@types/node@22.19.21)
 
   packages/contracts:
     devDependencies:

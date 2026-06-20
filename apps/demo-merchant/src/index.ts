@@ -20,10 +20,10 @@ const payTo = (process.env.MERCHANT_ADDRESS ?? ZERO) as `0x${string}`;
 
 const asset: AssetConfig = {
   address: (process.env.GALILEO_ATOKEN_ADDRESS ?? ZERO) as `0x${string}`,
-  name: process.env.ATOKEN_NAME ?? "AgentCheckout USD",
+  name: process.env.ATOKEN_NAME ?? "Vouch USD",
   version: process.env.ATOKEN_VERSION ?? "1",
   decimals: Number(process.env.ATOKEN_DECIMALS ?? 6),
-  symbol: process.env.ATOKEN_SYMBOL ?? "acUSD",
+  symbol: process.env.ATOKEN_SYMBOL ?? "vUSD",
 };
 
 const zgMode = process.env.ZG_COMPUTE_MODE === "live" ? "live" : "mock";
@@ -69,7 +69,7 @@ app.get("/premium-data", (_req, res) => {
     pair: "OG/USD",
     confidence: 0.91,
     generatedAt: new Date().toISOString(),
-    note: "Unlocked via AgentCheckout 0G: TEE-attested decision + settled A-Token on Galileo.",
+    note: "Unlocked via Vouch: TEE-attested decision + settled vUSD on 0G Galileo.",
   });
 });
 
@@ -104,7 +104,7 @@ app.post("/api/reverify", async (req, res) => {
 
 app.get("/", (_req, res) => {
   res.json({
-    name: "AgentCheckout 0G demo-merchant",
+    name: "Vouch demo-merchant",
     zgMode: zg.mode,
     storage: useZgStorage ? "0g-storage" : "json-file",
     protected: ["GET /premium-data"],

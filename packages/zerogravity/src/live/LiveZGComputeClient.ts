@@ -4,14 +4,14 @@ import type {
   DecideInput,
   DecideResult,
   ZGComputeClient,
-} from "../types.js";
+} from "../types";
 import {
   ensureLedger,
   ensureProviderFunded,
   getBroker,
   pickTeeProvider,
-} from "./broker.js";
-import { buildSystemPrompt, buildUserPrompt, parseLLMVerdict } from "./policy.js";
+} from "./broker";
+import { buildSystemPrompt, buildUserPrompt, parseLLMVerdict } from "./policy";
 
 /**
  * Live ZGComputeClient — runs the compliance verdict on a TeeML-verifiable

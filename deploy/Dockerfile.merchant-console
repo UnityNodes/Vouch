@@ -1,0 +1,76 @@
+# syntax=docker/dockerfile:1.7
+#
+# Production image for the Vouch merchant-console (Next.js + API routes).
+# Multi-stage:
+#   1. deps     — install workspace deps with pnpm
+#   2. builder  — build the Next.js standalone bundle
+#   3. runner   — minimal alpine image with just node + the bundle
+#
+# Build context = monorepo root (NOT apps/merchant-console). Run from root:
+#   docker build -f deploy/Dockerfile.merchant-console -t vouch-console:latest .
+
+ARG NODE_VERSION=20-alpine
+
+############################
+# 1. deps
+############################
+FROM node:${NODE_VERSION} AS deps
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10.14.0
+
+# copy only the metadata first so docker cache survives source-only edits
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/merchant-console/package.json apps/merchant-console/
+COPY apps/demo-merchant/package.json apps/demo-merchant/
+COPY packages/shared/package.json packages/shared/
+COPY packages/zerogravity/package.json packages/zerogravity/
+COPY packages/middleware/package.json packages/middleware/
+COPY packages/facilitator/package.json packages/facilitator/
+COPY packages/mcp/package.json packages/mcp/
+COPY packages/contracts/package.json packages/contracts/
+
+RUN pnpm install --frozen-lockfile
+
+############################
+# 2. builder
+############################
+FROM node:${NODE_VERSION} AS builder
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10.14.0
+
+# bring in installed deps + source
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps ./apps
+COPY --from=deps /app/packages ./packages
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NEXT_OUTPUT_STANDALONE=1 \
+    NODE_ENV=production
+
+RUN pnpm --filter @agentcheckout/merchant-console build
+
+############################
+# 3. runner
+############################
+FROM node:${NODE_VERSION} AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production \
+    NEXT_TELEMETRY_DISABLED=1 \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nextjs
+
+# copy the standalone Next.js server (includes workspace deps it actually needs)
+COPY --from=builder --chown=nextjs:nodejs /app/apps/merchant-console/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/merchant-console/.next/static ./apps/merchant-console/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/merchant-console/public ./apps/merchant-console/public
+
+USER nextjs
+EXPOSE 3000
+CMD ["node", "apps/merchant-console/server.js"]
