@@ -33,10 +33,10 @@ export function VerifyButton({ attestation }: VerifyButtonProps) {
       const j = await r.json();
       if (j.verified) {
         setState("ok");
-        setDetail(j.mode === "live" ? "Verified via 0G Compute" : "Mock attestation");
+        setDetail(j.mode === "live" ? "via 0G Compute" : "mock attestation");
       } else {
         setState("fail");
-        setDetail(j.error ?? "Attestation did not match");
+        setDetail(j.error ?? "verdict did not match");
       }
     } catch (e) {
       setState("fail");
@@ -44,44 +44,62 @@ export function VerifyButton({ attestation }: VerifyButtonProps) {
     }
   }
 
-  const label =
-    state === "idle"
-      ? "Re-check"
-      : state === "loading"
-        ? "Checking…"
-        : state === "ok"
-          ? "✅ Honest"
-          : "❌ Tampered";
-
   const tooltip =
     attestation.verifiabilityKind === "TeeML"
-      ? "Click to ask 0G Compute to re-run the original attestation check."
-      : "Mock attestation - in live mode this would hit a real TEE provider.";
+      ? "Re-run the original TEE attestation through 0G Compute."
+      : "Mock attestation - live mode hits a real TEE provider.";
 
   return (
-    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "stretch", gap: 2 }}>
+    <span style={{ display: "inline-flex", flexDirection: "column", alignItems: "flex-start" }}>
       <button
+        className={`recheck ${state}`}
         onClick={go}
         disabled={state === "loading"}
         title={tooltip}
-        style={{
-          padding: "4px 10px",
-          fontSize: 12,
-          borderRadius: 6,
-          border: "1px solid #333",
-          background:
-            state === "ok" ? "#0a8" : state === "fail" ? "#c33" : "#1a1a1a",
-          color: state === "idle" || state === "loading" ? "#eee" : "white",
-          cursor: state === "loading" ? "wait" : "pointer",
-        }}
       >
-        {label}
+        {state === "idle" && (
+          <>
+            <Loop /> Re-check
+          </>
+        )}
+        {state === "loading" && <span style={{ position: "relative", zIndex: 1 }}>Checking…</span>}
+        {state === "ok" && (
+          <>
+            <Tick /> Honest
+          </>
+        )}
+        {state === "fail" && (
+          <>
+            <Cross /> Tampered
+          </>
+        )}
       </button>
-      {detail && (
-        <span style={{ fontSize: 10, color: "#888", marginTop: 2 }}>
-          {detail}
-        </span>
-      )}
+      {detail && <span className="recheck-detail">{detail}</span>}
     </span>
+  );
+}
+
+function Loop() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M18 3v3.5h-3.5M6 21v-3.5h3.5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function Tick() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M8 12l2.5 2.5L16 9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function Cross() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9 9l6 6M15 9l-6 6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
   );
 }
