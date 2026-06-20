@@ -106,14 +106,28 @@ To run the live stack against the real Galileo broker, see **Live demo (testnet)
 
 ### 1. Funding bootstrap
 
-The 0G ledger requires **3 OG minimum** for `addLedger`, plus 1 OG per provider sub-account, plus a buffer for storage uploads / contract deploys. The public faucet caps at 0.1 OG/wallet/day, so practical bootstrap is *5 wallets dripping + Discord/Telegram topup*.
+The `InferenceServing` contract requires **3 OG minimum** on `addLedger` (per the official [`0g-compute-ts-starter-kit`](https://github.com/0gfoundation/0g-compute-ts-starter-kit) README). Plus 1 OG per provider on `transferFund`, plus ~1 OG buffer for storage uploads + contract deploys + settlement gas. **Realistic target on `PRIMARY_PRIVATE_KEY`: ≥ 5 OG.**
+
+Funding sources:
+
+| Source | Amount | Limit |
+|---|---|---|
+| [faucet.0g.ai](https://faucet.0g.ai) | 0.1-0.5 OG | per wallet, **per day** (resets ~24h) |
+| [Google Cloud Faucet](https://cloud.google.com/application/web3/faucet/0g/galileo) | 0.1 OG | per wallet per day, separate quota |
+| [0G Discord #faucet](https://discord.com/invite/0glabs) | **on request** | docs explicitly direct here for >0.1 OG/day |
+
+5 dripping wallets × faucets give ~3 OG/day — short of the 5-OG target. Discord is the **supported** channel for the gap, not a workaround.
+
+Defaults in [packages/zerogravity/src/live/broker.ts](packages/zerogravity/src/live/broker.ts):
+- `addLedger(3 OG)` — `ZG_LEDGER_INITIAL_OG` override (contract enforces ≥3 in v0.6.x)
+- `transferFund(provider, 'inference', 1 OG)` — `ZG_PROVIDER_FUND_OG` override
 
 ```bash
 npx tsx scripts/generate-wallets.ts        # one-shot: 5 EOAs → scripts/wallets.json (gitignored)
-pnpm fund:balances                          # daily check; switch to next step when sum ≥ 5 OG
+pnpm fund:balances                          # READY at sum ≥ 5 OG, MINIMAL at ≥ 4
 ```
 
-Funding-log template at [scripts/funding-log.md](scripts/funding-log.md).
+Full source list, daily drip log, and Discord escalation template: [scripts/funding-log.md](scripts/funding-log.md).
 
 ### 2. Deploy contracts to Galileo
 
@@ -171,12 +185,13 @@ See [.env.example](.env.example) for the full list. The hot ones:
 The group-stage submission is a **thin vertical slice** that proves the critical path end-to-end. The following are scoped to later rounds:
 
 - **Per-agent policy registry** — `ComplianceGateway` extension with `mapping(agent => Policy)`. Ro32.
+- **AgenticID integration** — gate authorizes via `authorizeUsage` on the ERC-7857 [AgenticID](https://github.com/0gfoundation/agenticID-examples) standard, connecting the payment decision to the agent's on-chain identity. Ro16.
 - **Compliance Passport** — portable on-chain reputation accreted from clean-tx history. Ro16.
 - **Human-in-the-loop escalation + escrow-hold** — async delayed decisions. Quarters.
 - **Multi-agent budget tree** — parent agent sets sub-agent limits. Quarters.
 - **DA-layer decision stream** — trustless auditor reconstruction. Phase 2.
 
-Resisting feature creep is itself a position — the four primitives in this submission cover the whole tournament-judging surface (x402, compliance gate, on-chain settlement, public verifiability) and rest on real 0G primitives, not promised ones.
+Resisting feature creep is itself a position — the four primitives in this submission cover the whole tournament-judging surface (x402, compliance gate, on-chain settlement, public verifiability) and rest on real 0G primitives, not promised ones. The deferred items each map to a real 0G primitive (AgenticID, etc.), not vapor.
 
 ---
 

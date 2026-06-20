@@ -43,15 +43,22 @@ export async function getBroker(): Promise<ZGComputeNetworkBroker> {
   return _broker;
 }
 
-/** Idempotent: create a 3-OG ledger if none exists. */
+/**
+ * Idempotent: create a ledger if none exists. Default 3 OG matches the v0.6.x
+ * contract minimum documented in the official 0g-compute-ts-starter-kit
+ * README: "Minimum 3 OG required (contract requirement)". Override only via
+ * ZG_LEDGER_INITIAL_OG if a future SDK version relaxes this — anything < 3 OG
+ * will revert against the current InferenceServing contract.
+ */
 export async function ensureLedger(): Promise<void> {
   const broker = await getBroker();
   try {
     await broker.ledger.getLedger();
     // already initialised
   } catch (_err) {
-    console.log("[zg-broker] addLedger(3) — first init, costs 3 OG");
-    await broker.ledger.addLedger(3);
+    const ledgerOg = Number(process.env.ZG_LEDGER_INITIAL_OG ?? "3");
+    console.log(`[zg-broker] addLedger(${ledgerOg}) — first init, costs ${ledgerOg} OG`);
+    await broker.ledger.addLedger(ledgerOg);
   }
 }
 
@@ -93,23 +100,26 @@ export async function ensureProviderFunded(providerAddress: string): Promise<voi
     }
   }
 
-  // 2. transfer 1 OG to provider sub-account (idempotent — top-up if needed)
+  // 2. transfer to provider sub-account (idempotent — top-up if needed).
+  // Default 1 OG matches the starter-kit canonical pattern.
+  const providerFundOg = process.env.ZG_PROVIDER_FUND_OG ?? "1.0";
+  const providerFundWei = ethers.parseEther(providerFundOg);
+  const minRequiredWei = providerFundWei / 2n;
   try {
     const providers = await broker.ledger.getProvidersWithBalance("inference");
     const row = providers.find(([addr]) => addr.toLowerCase() === providerAddress.toLowerCase());
     const currentBalance = row?.[1] ?? 0n;
-    const minRequired = ethers.parseEther("0.5");
-    if (currentBalance < minRequired) {
+    if (currentBalance < minRequiredWei) {
       console.log(
-        `[zg-broker] transferFund(${providerAddress.slice(0, 10)}…, 'inference', 1 OG) — current ${ethers.formatEther(currentBalance)}`,
+        `[zg-broker] transferFund(${providerAddress.slice(0, 10)}…, 'inference', ${providerFundOg} OG) — current ${ethers.formatEther(currentBalance)}`,
       );
-      await broker.ledger.transferFund(providerAddress, "inference", ethers.parseEther("1.0"));
+      await broker.ledger.transferFund(providerAddress, "inference", providerFundWei);
     }
   } catch (e) {
     // last resort: just transferFund; if already funded, sdk should error or be a no-op
     console.log(`[zg-broker] transferFund fallback: ${(e as Error).message}`);
     try {
-      await broker.ledger.transferFund(providerAddress, "inference", ethers.parseEther("1.0"));
+      await broker.ledger.transferFund(providerAddress, "inference", providerFundWei);
     } catch (e2: unknown) {
       const msg = String((e2 as Error)?.message ?? "");
       if (!msg.toLowerCase().includes("balance") && !msg.toLowerCase().includes("already")) {

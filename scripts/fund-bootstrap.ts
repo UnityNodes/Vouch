@@ -1,11 +1,15 @@
 /**
- * Read balances of all 5 funding wallets. Print sum.
+ * Read balances of all 5 funding wallets. Print sum + readiness.
  * Run: `pnpm fund:balances` (or `npx tsx scripts/fund-bootstrap.ts`)
  *
- * Decision rule:
- *   - sum >= 5 OG → ready for Phase 3 DAY-1 GATE (live broker init)
- *   - sum >= 3 OG → can call addLedger(3) but no buffer
- *   - sum  < 3 OG → keep dripping faucet + Discord escalation
+ * Thresholds match the OFFICIAL 0g-compute-ts-starter-kit minimums:
+ *   - addLedger:     3 OG (contract minimum, will revert if lower)
+ *   - transferFund:  1 OG per provider (inference sub-account)
+ *   - gas / storage / deploys / settlement: ~0.5 OG buffer recommended
+ *
+ *   ≥ 5 OG → READY (3 + 1 + 1 buffer)
+ *   ≥ 4 OG → MINIMAL (works for one shot, no margin for mistakes)
+ *   < 4 OG → cannot init ledger; keep dripping + Discord escalation
  */
 import "dotenv/config";
 import { ethers } from "ethers";
@@ -45,11 +49,16 @@ for (const r of rows) {
 const totalOg = Number(ethers.formatEther(total));
 console.log(`\n  total: ${ethers.formatEther(total)} OG`);
 
-if (totalOg >= 5) {
-  console.log(`\n✅ READY — sum ≥ 5 OG. Consolidate onto PRIMARY_PRIVATE_KEY and proceed to Phase 3 DAY-1 GATE.`);
-} else if (totalOg >= 3) {
-  console.log(`\n⚠️  USABLE — sum ≥ 3 OG (no buffer). Can run addLedger(3) but transferFund will need top-up.`);
+if (totalOg >= 5.0) {
+  console.log(`\n✅ READY — sum ≥ 5 OG. Consolidate onto PRIMARY_PRIVATE_KEY and run smoke-live-gate.`);
+  console.log(`   Will spend: addLedger(3) + transferFund(1) + ~1 OG on storage/deploys/settle.`);
+} else if (totalOg >= 4.0) {
+  console.log(`\n⚠️  MINIMAL — sum ${totalOg.toFixed(2)} OG covers addLedger(3) + transferFund(1) with no buffer.`);
+  console.log(`   One shot only — any retry/storage upload/deploy will run out.`);
+  console.log(`   Strongly recommended: Discord topup before running smoke (see scripts/funding-log.md).`);
 } else {
-  console.log(`\n⏳ KEEP DRIPPING — sum ${ethers.formatEther(total)} OG < 3 OG. Continue faucet + Discord escalation.`);
-  console.log(`   Faucet: https://faucet.0g.ai (0.1 OG/wallet/day)`);
+  console.log(`\n⏳ KEEP DRIPPING — sum ${totalOg.toFixed(2)} OG < 4 OG.`);
+  console.log(`   The InferenceServing contract enforces a 3 OG minimum on addLedger;`);
+  console.log(`   anything lower will revert. Faucets alone give ~3 OG/day across 5 wallets.`);
+  console.log(`   Faster: post the Discord template from scripts/funding-log.md.`);
 }
