@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReceiptRecord } from "@agentcheckout/shared";
 import { VerifyButton } from "../components/VerifyButton";
 
@@ -152,19 +152,8 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="gate-stage enter" style={vd(240)} aria-hidden>
-            <div className="rail" />
-            <div className="gate-start"><Wallet /></div>
-            <div className="gate">
-              <span className="scan" />
-              <span className="ring" />
-              <div className="orbit"><span className="dot" style={{ transform: "translate(82px, -4px)" }} /></div>
-              <div className="orbit rev"><span className="dot" style={{ transform: "translate(-86px, -4px)" }} /></div>
-              <span className="seal"><ShieldHalf /></span>
-              <span className="tok ok"><Check /></span>
-              <span className="tok bad"><Ban /></span>
-            </div>
-            <div className="gate-end"><Box /></div>
+          <div className="term-stage enter" style={vd(240)} aria-hidden>
+            <TerminalHero receipts={receipts} mode={mode} />
           </div>
         </header>
 
@@ -309,6 +298,97 @@ function fmtAmount(raw: string): string {
   return n.toLocaleString(undefined, { maximumFractionDigits: n < 1 ? 4 : 2 });
 }
 
+
+type Mode = "live" | "mock";
+type Line = { kind: "cmd" | "log" | "idle" | "result"; html: string; resultOk?: boolean };
+
+function buildLines(latest: ReceiptRecord | undefined, mode: Mode): Line[] {
+  if (!latest) {
+    return [
+      { kind: "cmd", html: "0g-vouch judge --watch" },
+      { kind: "idle", html: mode === "live" ? "waiting for payment intent on 0G Galileo…" : "(mock mode - press a button above to seed)" },
+    ];
+  }
+  const allowed = latest.compliance.allowed;
+  const verified = latest.attestation.verified;
+  const amt = (Number(latest.payment.amount) / 1e6).toLocaleString(undefined, { maximumFractionDigits: 4 });
+  const payer = latest.payer.slice(0, 10) + "…";
+  const prov = latest.attestation.providerAddress.slice(0, 10) + "…";
+  const rationale = latest.compliance.rationale.length > 56
+    ? latest.compliance.rationale.slice(0, 53) + "..."
+    : latest.compliance.rationale;
+  const txShort = latest.settlement.txHash ? latest.settlement.txHash.slice(0, 14) + "…" : null;
+  const rootShort = latest.storage?.storageRoot ? latest.storage.storageRoot.slice(0, 14) + "…" : null;
+
+  const lines: Line[] = [
+    { kind: "cmd", html: `judge --payer ${payer} --amount ${amt} vUSD` },
+    { kind: "log", html: `<span class="tag">[0G/TEE]</span>   provider ${prov}` },
+    { kind: "log", html: `<span class="tag">[0G/TEE]</span>   verdict: <span class="${allowed ? "ok" : "bad"}">${latest.compliance.code}</span>  -  ${rationale}` },
+    { kind: "log", html: `<span class="tag">[0G/TEE]</span>   processResponse: verified=<span class="${verified ? "ok" : "bad"}">${verified}</span>` },
+  ];
+  if (rootShort) lines.push({ kind: "log", html: `<span class="tag">[0G/STORE]</span> root <span class="hash">${rootShort}</span>` });
+  if (txShort) lines.push({ kind: "log", html: `<span class="tag">[0G/CHAIN]</span> ${allowed ? "settled" : "anchored"} tx <span class="hash">${txShort}</span>` });
+  lines.push({
+    kind: "result",
+    resultOk: allowed,
+    html: allowed ? `&#10003; PAID ${amt} vUSD on 0G Galileo` : `&#10005; BLOCKED  (no money moved)`,
+  });
+  return lines;
+}
+
+function TerminalHero({ receipts, mode }: { receipts: ReceiptRecord[]; mode: Mode }) {
+  const latest = receipts[0];
+  const lines = useMemo(() => buildLines(latest, mode), [latest, mode]);
+  const [step, setStep] = useState(0);
+  const [typed, setTyped] = useState("");
+
+  // reset typewriter when the latest receipt changes
+  useEffect(() => {
+    setStep(0);
+    setTyped("");
+  }, [latest?.id, mode]);
+
+  // typewriter through `lines`
+  useEffect(() => {
+    const line = lines[step];
+    if (!line) return;
+    const current = line.html;
+    if (typed.length < current.length) {
+      const isTag = current[typed.length] === "<";
+      const delta = isTag ? current.indexOf(">", typed.length) - typed.length + 1 : 1;
+      const t = setTimeout(() => setTyped(current.slice(0, typed.length + delta)), isTag ? 0 : 14);
+      return () => clearTimeout(t);
+    }
+    const t = setTimeout(() => { setStep((sv) => sv + 1); setTyped(""); }, 320);
+    return () => clearTimeout(t);
+  }, [step, typed, lines]);
+
+  const done = step >= lines.length;
+  return (
+    <div className="term">
+      <div className="term-bar">
+        <span className="b r" /><span className="b y" /><span className="b g" />
+        <span className="term-title">
+          0g-tee-judge ~ /vouch
+          <span className="live">live</span>
+        </span>
+      </div>
+      <div className="term-body">
+        {lines.slice(0, step).map((l, i) => (
+          <div key={i} className={`tl ${l.kind}${l.kind === "result" && l.resultOk !== undefined ? (l.resultOk ? " ok" : " bad") : ""}`} dangerouslySetInnerHTML={{ __html: l.html }} />
+        ))}
+        {lines[step] && (
+          <div className={`tl ${lines[step]!.kind}`}>
+            <span dangerouslySetInnerHTML={{ __html: typed }} />
+            <span className="caret" />
+          </div>
+        )}
+        {done && <div className="tl cmd"><span className="caret" /></div>}
+      </div>
+    </div>
+  );
+}
+
 function Counter({ value }: { value: number }) {
   const [display, setDisplay] = useState(0);
   const from = useRef(0);
@@ -362,4 +442,3 @@ function Arrow() { return (<svg viewBox="0 0 24 24" fill="none"><path d="M7 17 1
 function ShieldHalf() { return (<svg viewBox="0 0 24 24" fill="none"><path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6l7-3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M12 3v20" stroke="currentColor" strokeWidth="1.6" /></svg>); }
 function Box() { return (<svg viewBox="0 0 24 24" fill="none"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /><path d="M4 7.5 12 12m0 0 8-4.5M12 12v9" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>); }
 function Magnifier() { return (<svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="6.5" stroke="currentColor" strokeWidth="1.7" /><path d="m16 16 4.5 4.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" /><path d="M8.5 11l1.8 1.8L14 9" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" /></svg>); }
-function Wallet() { return (<svg viewBox="0 0 24 24" fill="none"><rect x="3" y="6" width="18" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.6" /><path d="M3 10h18M16 14h2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" /></svg>); }
