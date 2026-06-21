@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const { store } = getVouchState();
+  const { store, mode } = await getVouchState();
   const decisions = await store.list();
-  return NextResponse.json({ decisions });
+  return NextResponse.json({ decisions, mode });
 }

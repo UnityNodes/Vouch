@@ -6,6 +6,6 @@ import { getVouchState } from "./zg";
  * (process-wide singleton via globalThis). Kept as a function for parity
  * with the donor API; callers don't care about the implementation.
  */
-export function getStore(): ReceiptStore {
-  return getVouchState().store;
+export async function getStore(): Promise<ReceiptStore> {
+  return (await getVouchState()).store;
 }

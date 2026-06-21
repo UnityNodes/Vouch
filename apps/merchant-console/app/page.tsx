@@ -6,17 +6,22 @@ import { VerifyButton } from "../components/VerifyButton";
 
 const GH = "https://github.com/UnityNodes/Vouch";
 const SDK = "https://github.com/0gfoundation/0g-compute-ts-starter-kit";
+const SCAN = "https://chainscan-galileo.0g.ai/address";
+const ATOKEN = "0x5B27c085896B28e69ba6f2Dc3B388D6BCcb1B1Cc";
+const GATEWAY = "0xb82E8677Ccede3FffA4DF1fE502d3AE702874440";
 
 export default function Page() {
   const [receipts, setReceipts] = useState<ReceiptRecord[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [demoBusy, setDemoBusy] = useState<"success" | "blocked" | null>(null);
+  const [mode, setMode] = useState<"live" | "mock">("mock");
 
   async function refresh() {
     try {
       const r = await fetch(`/api/decisions`, { cache: "no-store" });
-      const j = (await r.json()) as { decisions: ReceiptRecord[] };
+      const j = (await r.json()) as { decisions: ReceiptRecord[]; mode?: string };
       setReceipts(j.decisions ?? []);
+      setMode(j.mode === "live" ? "live" : "mock");
       setError(null);
     } catch (e) {
       setError((e as Error).message);
@@ -65,7 +70,7 @@ export default function Page() {
         <div className="nav-right">
           <span className="live">
             <span className="dot" />
-            Live
+            {mode === "live" ? "Live · 0G Galileo" : "Live"}
           </span>
           <a className="nav-link gh" href={GH} target="_blank" rel="noreferrer">
             <Github />
@@ -118,7 +123,11 @@ export default function Page() {
             disabled={demoBusy !== null}
           >
             <Check />
-            {demoBusy === "success" ? "Sending…" : "Try a legitimate payment"}
+            {demoBusy === "success"
+              ? mode === "live"
+                ? "Judging on 0G…"
+                : "Sending…"
+              : "Try a legitimate payment"}
           </button>
           <button
             className="btn btn-stop"
@@ -126,7 +135,11 @@ export default function Page() {
             disabled={demoBusy !== null}
           >
             <Ban />
-            {demoBusy === "blocked" ? "Sending…" : "Try a suspicious payment"}
+            {demoBusy === "blocked"
+              ? mode === "live"
+                ? "Judging on 0G…"
+                : "Sending…"
+              : "Try a suspicious payment"}
           </button>
           <a className="btn btn-link" href={SDK} target="_blank" rel="noreferrer">
             0G Compute SDK
@@ -255,11 +268,20 @@ export default function Page() {
             </a>{" "}
             a tampered verdict fails the check; mock mode returns instantly.
           </div>
-          <span className="mode">mock mode</span>
+          <span className="mode">
+            {mode === "live" ? "live on 0G Galileo" : "mock mode"}
+          </span>
         </div>
         <div className="row" style={{ marginTop: 14 }}>
           <span>
-            Vouch - payments that vouch for themselves. Built for Zero Cup on 0G.
+            Contracts on 0G Galileo:{" "}
+            <a href={`${SCAN}/${ATOKEN}`} target="_blank" rel="noreferrer">
+              VouchToken
+            </a>{" "}
+            ·{" "}
+            <a href={`${SCAN}/${GATEWAY}`} target="_blank" rel="noreferrer">
+              ComplianceGateway
+            </a>
           </span>
           <a href={GH} target="_blank" rel="noreferrer">
             github.com/UnityNodes/Vouch

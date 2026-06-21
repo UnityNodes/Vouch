@@ -6,7 +6,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const receipts = await getStore().list();
+  const store = await getStore();
+  const receipts = await store.list();
   const bundle = buildComplianceBundle(
     {
       address: process.env.MERCHANT_ADDRESS ?? "0x0000000000000000000000000000000000000000",

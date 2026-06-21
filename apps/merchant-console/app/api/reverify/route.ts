@@ -17,7 +17,7 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  const { zg } = getVouchState();
+  const { zg } = await getVouchState();
   try {
     const result = await zg.verifyAttestation(providerAddress, chatId, content);
     return NextResponse.json({ verified: result === true, mode: zg.mode, raw: result });
