@@ -107,7 +107,7 @@ export default function Page() {
       <main className="shell">
         <nav className="nav">
           <div className="mark">
-            <span className="glyph"><img src="/logo.png" alt="Vouch logo" width="22" height="22" /></span>
+            <span className="glyph"><img src="/logo.png" alt="Vouch logo" width="38" height="38" /></span>
             <span className="name">Vouch</span>
             <span className="by">on <b>0G</b></span>
           </div>
