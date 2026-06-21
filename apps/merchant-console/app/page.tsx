@@ -232,24 +232,31 @@ export default function Page() {
                   <td><Verdict code={r.compliance.code} /></td>
                   <td><span className="why">{r.compliance.rationale}</span></td>
                   <td>
-                    {r.settlement.txHash ? (
-                      r.settlement.explorerUrl ? (
-                        <a
-                          className="rcpt"
-                          href={r.settlement.explorerUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {r.settlement.txHash.slice(0, 10)}…
-                        </a>
+                    <div className="rcpt-cell">
+                      {r.settlement.txHash ? (
+                        r.settlement.explorerUrl ? (
+                          <a
+                            className="rcpt"
+                            href={r.settlement.explorerUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {r.settlement.txHash.slice(0, 10)}…
+                          </a>
+                        ) : (
+                          <span className="rcpt">
+                            {r.settlement.txHash.slice(0, 10)}…
+                          </span>
+                        )
                       ) : (
-                        <span className="rcpt">
-                          {r.settlement.txHash.slice(0, 10)}…
+                        <span className="rcpt none">not recorded</span>
+                      )}
+                      {r.storage?.storageRoot && (
+                        <span className="zgs" title="0G Storage root hash">
+                          0G Storage {r.storage.storageRoot.slice(0, 10)}…
                         </span>
-                      )
-                    ) : (
-                      <span className="rcpt none">no settlement</span>
-                    )}
+                      )}
+                    </div>
                   </td>
                   <td><VerifyButton attestation={r.attestation} /></td>
                 </tr>

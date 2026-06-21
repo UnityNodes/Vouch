@@ -13,9 +13,17 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { GALILEO_TESTNET } from "@agentcheckout/shared";
 import type { ReceiptRecord } from "@agentcheckout/shared";
-import { MockZGComputeClient } from "@agentcheckout/zerogravity";
+import { MockZGComputeClient, uploadJsonToStorage } from "@agentcheckout/zerogravity";
+import type { StorageRef } from "@agentcheckout/shared";
 import { getVouchState } from "../../../../lib/zg";
 import { anchorDecision } from "../../../../lib/anchor";
+
+function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ]);
+}
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -93,6 +101,24 @@ export async function POST(req: Request) {
     explorerUrl = `${explorerBase}/tx/${txHash}`;
   }
 
+  // 0G Storage: persist the full decision record and keep its content-addressed
+  // root on the receipt. Best-effort and time-bounded so a slow testnet upload
+  // never blocks the response.
+  let storage: StorageRef | null = null;
+  if (effectiveMode === "live" && process.env.ZG_STORAGE_MODE === "live") {
+    try {
+      const uploaded = await withTimeout(
+        uploadJsonToStorage({ payer, merchant: MERCHANT, amount, purpose, decision }),
+        25000,
+      );
+      if (uploaded.storageRoot) {
+        storage = { storageRoot: uploaded.storageRoot, uploadTxHash: uploaded.uploadTxHash };
+      }
+    } catch (e) {
+      console.error("[vouch] 0G Storage upload skipped:", (e as Error).message);
+    }
+  }
+
   const receipt: ReceiptRecord = {
     id: randomUUID(),
     ts: new Date().toISOString(),
@@ -111,7 +137,7 @@ export async function POST(req: Request) {
       decisionHash: decision.decisionHash,
       ...(decision.allowed ? {} : { reason: "compliance_denied" }),
     },
-    storage: null,
+    storage,
     payment: {
       asset: "vUSD",
       amount,
@@ -137,6 +163,7 @@ export async function POST(req: Request) {
       rationale: receipt.compliance.rationale,
       verified: receipt.attestation.verified,
       txHash,
+      storageRoot: storage?.storageRoot,
     },
   });
 }

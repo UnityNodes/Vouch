@@ -4,6 +4,8 @@ export * from "./types";
 export { MockZGComputeClient } from "./mock/MockZGComputeClient";
 export type { MockZGOptions } from "./mock/MockZGComputeClient";
 export { ZGStorageReceiptStore } from "./live/storage";
+export { uploadJsonToStorage } from "./live/upload";
+export type { StorageUploadResult } from "./live/upload";
 
 export async function makeZGComputeClient(mode: ZGMode): Promise<ZGComputeClient> {
   if (mode === "mock") {

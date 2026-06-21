@@ -283,9 +283,11 @@ a { color: inherit; }
 .verdict { font-weight: 600; }
 .verdict.ok { color: var(--ok); } .verdict.bad { color: var(--bad); } .verdict.warn { color: var(--warn); }
 .why { color: var(--muted); font-size: 12px; line-height: 1.5; max-width: 280px; display: inline-block; }
+.rcpt-cell { display: flex; flex-direction: column; gap: 4px; }
 .rcpt { font-family: var(--font-mono), monospace; font-size: 12px; color: var(--p2); text-decoration: none; }
 .rcpt:hover { text-decoration: underline; }
 .rcpt.none { color: var(--faint); }
+.zgs { font-family: var(--font-mono), monospace; font-size: 10.5px; color: var(--faint); }
 
 /* ===== re-check button ===== */
 .recheck {
