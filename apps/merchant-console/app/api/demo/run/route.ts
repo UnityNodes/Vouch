@@ -17,6 +17,7 @@ import { MockZGComputeClient, uploadJsonToStorage } from "@agentcheckout/zerogra
 import type { StorageRef } from "@agentcheckout/shared";
 import { getVouchState } from "../../../../lib/zg";
 import { anchorDecision } from "../../../../lib/anchor";
+import { settleVUSD, demoPayerAddress } from "../../../../lib/settle";
 
 function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
@@ -47,7 +48,10 @@ export async function POST(req: Request) {
     mode?: "success" | "blocked";
   };
   const { zg, store, mode } = await getVouchState();
-  const payer = randomAddress();
+  // In live mode the payer is the funded demo agent (holds vUSD, signs the
+  // EIP-3009 authorization). In mock mode it is a throwaway address.
+  const livePayer = mode === "live" ? demoPayerAddress() : null;
+  const payer = (livePayer ?? randomAddress()) as `0x${string}`;
 
   // Blocked path: large amount + hostile purpose -> the judge denies.
   // Paid path: 0.05 vUSD within policy.
@@ -78,23 +82,38 @@ export async function POST(req: Request) {
   const explorerBase = GALILEO_TESTNET.explorerUrl.replace(/\/$/, "");
   const settlementStatus = decision.allowed ? "SUCCESS" : "BLOCKED";
 
-  // On-chain receipt: real for live (anchor decision to ComplianceGateway, even
-  // when blocked), simulated for mock. Anchoring is best-effort.
+  // On-chain receipt.
+  //   live + allowed   -> real EIP-3009 vUSD settlement (the payment moves)
+  //   live + blocked   -> ComplianceGateway record (the block is provable too)
+  //   mock + allowed   -> simulated tx hash
+  // Both live paths are best-effort; on failure we fall back so the demo never
+  // hard-breaks.
   let txHash: string | undefined;
   let explorerUrl: string | undefined;
   if (effectiveMode === "live") {
-    try {
-      const anchored = await anchorDecision({
-        payer,
-        merchant: MERCHANT,
-        amount,
-        decisionHash: decision.decisionHash,
-        allowed: decision.allowed,
-      });
-      txHash = anchored.txHash;
-      explorerUrl = anchored.explorerUrl;
-    } catch (e) {
-      console.error("[vouch] on-chain anchor failed:", (e as Error).message);
+    if (decision.allowed) {
+      try {
+        const settled = await settleVUSD(MERCHANT, amount);
+        txHash = settled.txHash;
+        explorerUrl = settled.explorerUrl;
+      } catch (e) {
+        console.error("[vouch] vUSD settlement failed:", (e as Error).message);
+      }
+    }
+    if (!txHash) {
+      try {
+        const anchored = await anchorDecision({
+          payer,
+          merchant: MERCHANT,
+          amount,
+          decisionHash: decision.decisionHash,
+          allowed: decision.allowed,
+        });
+        txHash = anchored.txHash;
+        explorerUrl = anchored.explorerUrl;
+      } catch (e) {
+        console.error("[vouch] on-chain anchor failed:", (e as Error).message);
+      }
     }
   } else if (decision.allowed) {
     txHash = fakeTxHash();
