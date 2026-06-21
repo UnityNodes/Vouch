@@ -1,28 +1,21 @@
 # Vouch - production stack for a host that ALREADY runs Caddy (e.g. this server).
 #
-# Unlike deploy/docker-compose.yml, this variant does NOT start its own nginx and
-# does NOT bind :80/:443 (the host Caddy already owns those). It runs only the
-# Next.js console on a loopback-only port; the host Caddy reverse-proxies
-# vouch.unitynodes.com -> 127.0.0.1:3060 and terminates TLS with the existing
-# Cloudflare origin certificate.
+# Runs only the Next.js console on a loopback-only port; the host Caddy
+# reverse-proxies vouch.unitynodes.com -> 127.0.0.1:3060 and terminates TLS.
+#
+# Mock vs live 0G is chosen at runtime from .env (ZG_COMPUTE_MODE). The image
+# (Dockerfile.merchant-console.live) keeps full node_modules so the 0G SDKs are
+# require()-able for live mode. Defaults below keep it safe (mock) if .env is
+# missing the live vars.
 #
 # Start:  docker compose -f deploy/docker-compose.caddy.yml --env-file .env up -d --build
 # Logs:   docker compose -f deploy/docker-compose.caddy.yml logs -f
-# Stop:   docker compose -f deploy/docker-compose.caddy.yml down
-#
-# Caddy site block (add to /etc/caddy/Caddyfile, then `caddy reload`):
-#   vouch.unitynodes.com {
-#       encode gzip
-#       import nextjs_headers
-#       tls /etc/ssl/cf-origin-unitynodes.pem /etc/ssl/cf-origin-unitynodes-key.pem
-#       reverse_proxy localhost:3060
-#   }
 
 services:
   merchant-console:
     build:
       context: ..
-      dockerfile: deploy/Dockerfile.merchant-console
+      dockerfile: deploy/Dockerfile.merchant-console.live
     image: vouch-console:latest
     container_name: vouch-console
     restart: unless-stopped
@@ -30,8 +23,18 @@ services:
       - NODE_ENV=production
       - PORT=3000
       - HOSTNAME=0.0.0.0
-      - ZG_COMPUTE_MODE=mock
-      - ZG_STORAGE_MODE=mock
+      # 0G mode (live needs PRIMARY_PRIVATE_KEY + contract addresses below)
+      - ZG_COMPUTE_MODE=${ZG_COMPUTE_MODE:-mock}
+      - ZG_STORAGE_MODE=${ZG_STORAGE_MODE:-mock}
+      - ZG_LEDGER_INITIAL_OG=${ZG_LEDGER_INITIAL_OG:-3}
+      - ZG_PROVIDER_FUND_OG=${ZG_PROVIDER_FUND_OG:-1.0}
+      # 0G Galileo
+      - GALILEO_RPC_URL=${GALILEO_RPC_URL:-https://evmrpc-testnet.0g.ai}
+      - GALILEO_CHAIN_ID=${GALILEO_CHAIN_ID:-16602}
+      - GALILEO_EXPLORER_URL=${GALILEO_EXPLORER_URL:-https://chainscan-galileo.0g.ai}
+      - GALILEO_ATOKEN_ADDRESS=${GALILEO_ATOKEN_ADDRESS:-}
+      - GALILEO_GATEWAY_ADDRESS=${GALILEO_GATEWAY_ADDRESS:-}
+      - PRIMARY_PRIVATE_KEY=${PRIMARY_PRIVATE_KEY:-}
       - MERCHANT_ADDRESS=${MERCHANT_ADDRESS:-0x0000000000000000000000000000000000000000}
     ports:
       # loopback only - exposed to the public solely through host Caddy

@@ -1,0 +1,59 @@
+# syntax=docker/dockerfile:1.7
+#
+# LIVE production image for the Vouch merchant-console.
+#
+# Unlike Dockerfile.merchant-console (Next standalone output), this image keeps
+# the FULL node_modules and runs `next start`. That is required for live mode:
+# the 0G compute/storage SDKs are commonjs server-externals that get traced OUT
+# of the standalone bundle, so they must be require()-able from a real
+# node_modules at runtime. Bigger image, but live 0G actually works.
+#
+# Build context = monorepo root. Mock vs live is chosen at runtime via
+# ZG_COMPUTE_MODE / ZG_STORAGE_MODE env (this image supports both).
+
+ARG NODE_VERSION=20-alpine
+
+############################
+# 1. deps
+############################
+FROM node:${NODE_VERSION} AS deps
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10.14.0
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
+COPY apps/merchant-console/package.json apps/merchant-console/
+COPY apps/demo-merchant/package.json apps/demo-merchant/
+COPY packages/shared/package.json packages/shared/
+COPY packages/zerogravity/package.json packages/zerogravity/
+COPY packages/middleware/package.json packages/middleware/
+COPY packages/facilitator/package.json packages/facilitator/
+COPY packages/mcp/package.json packages/mcp/
+COPY packages/contracts/package.json packages/contracts/
+
+RUN pnpm install --frozen-lockfile
+
+############################
+# 2. build + run
+############################
+FROM node:${NODE_VERSION} AS runner
+WORKDIR /app
+RUN apk add --no-cache libc6-compat
+RUN npm install -g pnpm@10.14.0
+
+# bring installed deps (root + per-package node_modules) then overlay source
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/apps ./apps
+COPY --from=deps /app/packages ./packages
+COPY . .
+
+ENV NEXT_TELEMETRY_DISABLED=1 \
+    NODE_ENV=production \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0
+
+# regular build (NOT standalone) so `next start` serves from full node_modules
+RUN pnpm --filter @agentcheckout/merchant-console build
+
+EXPOSE 3000
+CMD ["pnpm", "--filter", "@agentcheckout/merchant-console", "start"]

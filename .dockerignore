@@ -1,0 +1,17 @@
+# keep build context clean and keep secrets OUT of the image
+**/node_modules
+**/.next
+**/.turbo
+.git
+*.log
+
+# secrets - never bake into an image
+.env
+.env.*
+!.env.example
+scripts/wallets.json
+
+# local artifacts
+**/dist
+**/.DS_Store
+coverage
