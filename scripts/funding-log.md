@@ -11,7 +11,7 @@ The `InferenceServing` contract (per the official [`0g-compute-ts-starter-kit` R
 | `addLedger(3)` - broker ledger init | 3.0 OG |
 | `transferFund(provider, 'inference', 1)` | 1.0 OG |
 | Gas for both txs + ack + smoke | ~0.01 OG |
-| Deploy `AgentCheckoutToken` + `ComplianceGateway` | ~0.05 OG |
+| Deploy `VouchToken` + `ComplianceGateway` | ~0.05 OG |
 | Storage uploads (~10 demo receipts) | ~0.1 OG |
 | Settlement EIP-3009 transactions | ~0.05 OG |
 | **Sane buffer for retries** | ~0.8 OG |

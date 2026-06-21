@@ -12,11 +12,9 @@ import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
  *         end-to-end on 0G Galileo. Public `mint` makes it a self-serve faucet
  *         for the demo. NOT production-grade.
  *
- *         Why our own token: on Monad the AgentCheckout demo had to fall back
- *         to "direct" signed transfers because the bank-issued token there
- *         lacks EIP-3009 (version()/DOMAIN_SEPARATOR revert). On 0G we deploy
- *         our own and restore the clean gasless flow - that's the EIP-3009
- *         win we sell to judges.
+ *         Why our own token: many testnet and bank-issued tokens omit
+ *         EIP-3009 (version() / DOMAIN_SEPARATOR revert), which breaks the
+ *         gasless "exact" flow. Deploying our own restores it end-to-end on 0G.
  */
 contract VouchToken is ERC20, EIP712 {
     uint8 private constant _DECIMALS = 6;

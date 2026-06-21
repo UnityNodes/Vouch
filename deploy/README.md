@@ -1,9 +1,21 @@
 # Vouch - Ubuntu deploy
 
-Production-mode deploy of the Vouch merchant-console (mock TEE attestations, in-memory receipt feed). Single Next.js container behind nginx with Let's Encrypt HTTPS.
+Production deploy of the Vouch merchant-console. Mock or live 0G is chosen at
+runtime via `ZG_COMPUTE_MODE` (see section 6). The receipt feed is in-memory.
 
 **Target host:** Ubuntu 22.04+ with Docker + Docker Compose installed.
 **Required externally:** a DNS A-record pointing your domain at this server.
+
+### Two ways to run
+
+- **Host already runs Caddy (what vouch.unitynodes.com uses).** The console
+  runs on a loopback port and your existing Caddy reverse-proxies to it. Use
+  `deploy/docker-compose.caddy.yml` + `deploy/Dockerfile.merchant-console.live`.
+  No nginx, no certbot. See `docker-compose.caddy.yml` for the Caddy site block.
+- **Fresh server, no reverse proxy yet.** Use the bundled nginx + Let's Encrypt
+  stack below (`deploy/docker-compose.yml`).
+
+The rest of this guide covers the fresh-server (nginx) path.
 
 ---
 
@@ -23,11 +35,11 @@ Verify: `docker --version`, `docker compose version`, `certbot --version`.
 ## 1. Clone + env
 
 ```bash
-git clone https://github.com/YOUR_ORG/vouch-0g.git ~/vouch
+git clone https://github.com/UnityNodes/Vouch.git ~/vouch
 cd ~/vouch
-cp deploy/.env.production.example .env
+cp .env.example .env
 nano .env
-# set VOUCH_DOMAIN, CERTBOT_EMAIL, MERCHANT_ADDRESS
+# set VOUCH_DOMAIN and MERCHANT_ADDRESS (certbot email is passed on the CLI in step 2)
 ```
 
 ---

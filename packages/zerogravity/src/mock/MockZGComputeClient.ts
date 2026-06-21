@@ -16,14 +16,14 @@ import type {
  * mock-mode run and a live-mode run produce the same decision shape.
  */
 const BURN = "0x000000000000000000000000000000000000dead";
-const DEFAULT_MAX_AMOUNT = 10_000_000n; // 10 acUSD (6-dec)
+const DEFAULT_MAX_AMOUNT = 10_000_000n; // 10 vUSD (6-dec)
 const SUSPICIOUS_PURPOSE = /\b(drain|exploit|rugpull|sweep)\b/i;
-const PURPOSE_REQUIRED_OVER = 1_000_000n; // 1 acUSD
+const PURPOSE_REQUIRED_OVER = 1_000_000n; // 1 vUSD
 
 export interface MockZGOptions {
   /** Lowercased addresses to always deny (covers the e2e "blocked agent"). */
   denyList?: string[];
-  /** Per-tx cap (atomic units). Default 10 acUSD. */
+  /** Per-tx cap (atomic units). Default 10 vUSD. */
   maxAmount?: bigint;
 }
 

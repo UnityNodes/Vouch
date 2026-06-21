@@ -24,7 +24,7 @@ export async function GET() {
   return new NextResponse(JSON.stringify(bundle, null, 2), {
     headers: {
       "content-type": "application/json",
-      "content-disposition": 'attachment; filename="agentcheckout-compliance-bundle.json"',
+      "content-disposition": 'attachment; filename="vouch-compliance-bundle.json"',
     },
   });
 }

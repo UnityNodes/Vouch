@@ -20,17 +20,17 @@ export const GALILEO_TESTNET = {
     indexerUrl: "https://indexer-storage-testnet-turbo.0g.ai",
   },
   contracts: {
-    /** AgentCheckoutToken (EIP-3009 acUSD) - populated after Phase 6 deploy */
+    /** VouchToken (EIP-3009 vUSD) - populated after contract deploy */
     aToken: (process.env.GALILEO_ATOKEN_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    /** ComplianceGateway - populated after Phase 6 deploy */
+    /** ComplianceGateway - populated after contract deploy */
     gateway: (process.env.GALILEO_GATEWAY_ADDRESS ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
   },
 } as const;
 
 /**
- * Monad testnet - kept as a reference (donor repo targeted it). NOT used at
- * runtime in agentcheckout-0g. Safe to delete once the donor handler is
- * fully refactored in Phase 4.
+ * Monad testnet settlement target. Used by the facilitator and MCP packages
+ * for the x402 EIP-3009 relay in the local e2e; the hosted 0G demo does not
+ * use it.
  */
 export const MONAD_TESTNET = {
   chainId: 10143,

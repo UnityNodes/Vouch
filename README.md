@@ -9,6 +9,14 @@ cryptographic proof are written to **0G Storage**, and anyone can click
 **"Re-check"** on the public explorer to confirm the verdict was
 honest. *Don't trust us. Check the receipts.*
 
+**Live demo:** [vouch.unitynodes.com](https://vouch.unitynodes.com) - running
+live on 0G Galileo testnet. Every "Try a payment" click is a real
+TEE-attested decision on 0G Compute, anchored on-chain.
+
+**Deployed on Galileo:**
+[VouchToken](https://chainscan-galileo.0g.ai/address/0x5B27c085896B28e69ba6f2Dc3B388D6BCcb1B1Cc)
+· [ComplianceGateway](https://chainscan-galileo.0g.ai/address/0xb82E8677Ccede3FffA4DF1fE502d3AE702874440)
+
 ---
 
 ## What Vouch actually proves
@@ -265,4 +273,4 @@ each map to a real 0G primitive too, not vapor.
 
 ## License
 
-MIT. See [LICENSE](LICENSE) if present, otherwise treat as MIT for the duration of the tournament.
+MIT. See [LICENSE](LICENSE).
