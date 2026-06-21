@@ -18,7 +18,7 @@ const mono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Vouch - payments that vouch for themselves",
   description:
-    "Every payment Vouch handles is judged by an AI running inside a sealed TEE enclave on 0G Compute. The reasoning, the verdict, and the cryptographic proof live on 0G Storage and 0G Chain - and anyone can re-check them with one click. Don't trust us. Check the receipts.",
+    "Every payment Vouch handles is judged by an AI running inside a sealed TEE enclave on 0G Compute. The reasoning, the verdict, and the cryptographic proof live on 0G Storage and 0G Chain, and anyone can re-check them with one click. Don't trust us. Check the receipts.",
   metadataBase: new URL("https://vouch.unitynodes.com"),
   openGraph: {
     title: "Vouch - payments that vouch for themselves",
@@ -33,14 +33,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${sans.variable} ${mono.variable}`}>
-      <body>
-        <div className="bg-canvas" aria-hidden />
-        <div className="bg-orb" aria-hidden />
-        <div className="bg-orb two" aria-hidden />
-        <div className="bg-grid" aria-hidden />
-        <div className="grain" aria-hidden />
-        {children}
-      </body>
+      <body>{children}</body>
     </html>
   );
 }
